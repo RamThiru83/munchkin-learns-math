@@ -1,4 +1,4 @@
-# Nilaa Learns Math
+# Munchkin Learns Math
 
 Gentle, interactive maths games for little learners (about ages 4-6, played with a grown-up), ordered from easy to tricky across five levels: Seeds, Sprouts, Buds, Blossoms and Fruits.
 
