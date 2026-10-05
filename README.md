@@ -2,7 +2,7 @@
 
 Gentle, interactive maths games for little learners (about ages 4-6, played with a grown-up), ordered from easy to tricky across five levels: Seeds, Sprouts, Buds, Blossoms and Fruits.
 
-Each of the 24 games has five rounds that get a little harder each time, and a **Watch** button that plays a narrated animation of the task being done, voice read-aloud (browser text-to-speech), soft sounds, and no scores to lose.
+Each of the 24 games has five rounds that get a little harder each time, and a **Watch** button that plays a narrated animation of the task being done, voice read-aloud (browser text-to-speech), soft sounds, and no scores to lose. Progress is saved on the device after every round, so a child who leaves part-way can carry on from the same round next time.
 
 The games are original and inspired by the preschool maths-circle activities described in the book below. This is an independent project, not affiliated with the author or publisher.
 
