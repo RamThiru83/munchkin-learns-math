@@ -1,0 +1,54 @@
+/* Shared building blocks games may use: .act-row .chip .choice .shake .hop .glow .dragging */
+.dragging {
+  filter: drop-shadow(0 8px 6px rgba(0, 0, 0, 0.25));
+}
+.act-row {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: center;
+}
+.chip {
+  display: inline-grid;
+  place-items: center;
+  min-width: 56px;
+  min-height: 56px;
+  border: 3px solid var(--ink);
+  border-radius: 18px;
+  background: #fff;
+  font-size: 2rem;
+  box-shadow: 0 3px 0 rgba(43, 45, 66, 0.15);
+  cursor: pointer;
+  user-select: none;
+}
+.chip.sel {
+  background: var(--yellow);
+}
+.choice {
+  min-width: 88px;
+  min-height: 88px;
+  font-size: 2.6rem;
+}
+.shake {
+  animation: shake 0.4s;
+}
+@keyframes shake {
+  25% {
+    transform: translateX(-6px);
+  }
+  75% {
+    transform: translateX(6px);
+  }
+}
+.hop {
+  animation: hop 0.5s;
+}
+@keyframes hop {
+  40% {
+    transform: translateY(-14px) scale(1.1);
+  }
+}
+.glow {
+  box-shadow: 0 0 0 5px rgba(255, 209, 102, 0.9);
+}

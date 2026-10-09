@@ -1,0 +1,95 @@
+/* Base: colour tokens, typography, buttons. Loaded first. */
+:root {
+  --bg: #fff8e7;
+  --ink: #2b2d42;
+  --card: #ffffff;
+  --line: #e8dfc8;
+  --pink: #ff8fab;
+  --yellow: #ffd166;
+  --green: #06d6a0;
+  --blue: #4cc9f0;
+  --purple: #9b5de5;
+  --orange: #ff9f1c;
+  --red: #ef476f;
+  --r: 22px;
+  --shadow: 0 6px 0 rgba(43, 45, 66, 0.12);
+  font-family: 'Nunito', 'Baloo 2', 'Comic Neue', 'Trebuchet MS', 'Segoe UI', system-ui, sans-serif;
+}
+* {
+  box-sizing: border-box;
+}
+html,
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--ink);
+  -webkit-tap-highlight-color: transparent;
+}
+body {
+  min-height: 100vh;
+  font-size: 18px;
+  line-height: 1.35;
+  overscroll-behavior: none;
+}
+a {
+  color: inherit;
+}
+button {
+  font: inherit;
+  color: inherit;
+}
+[hidden] {
+  display: none !important;
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4em;
+  justify-content: center;
+  border: 3px solid var(--ink);
+  background: #fff;
+  border-radius: 999px;
+  padding: 0.55em 1.1em;
+  font-weight: 800;
+  text-decoration: none;
+  cursor: pointer;
+  box-shadow: 0 4px 0 rgba(43, 45, 66, 0.18);
+  min-height: 48px;
+  transition: transform 0.08s;
+}
+.btn:active {
+  transform: translateY(3px);
+  box-shadow: none;
+}
+.btn.primary {
+  background: var(--green);
+}
+.btn.small {
+  padding: 0.3em 0.8em;
+  min-height: 42px;
+  font-size: 0.9rem;
+}
+.btn:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+.icon-btn {
+  border: none;
+  background: transparent;
+  font-size: 1.6rem;
+  cursor: pointer;
+  min-width: 48px;
+  min-height: 48px;
+}
+.owl {
+  display: block;
+  flex: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}

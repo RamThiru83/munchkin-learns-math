@@ -1,0 +1,168 @@
+/* Home page: hero header and the level map with game tiles. */
+.hero {
+  display: flex;
+  gap: 16px;
+  align-items: center;
+  flex-wrap: wrap;
+  padding: 18px 20px;
+  background: linear-gradient(120deg, #e7f9f2, #fff0f5);
+  border-bottom: 4px solid var(--ink);
+}
+.hero h1 {
+  margin: 0;
+  font-size: clamp(1.8rem, 5vw, 2.8rem);
+  letter-spacing: 0.5px;
+}
+.hero .tag {
+  margin: 0.2em 0;
+  font-weight: 700;
+}
+.hero .count {
+  margin: 0;
+  font-weight: 800;
+  color: #a05a00;
+}
+.hero-btns {
+  margin-left: auto;
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.map {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 14px 16px 40px;
+}
+.level {
+  margin: 24px 0;
+  padding: 16px;
+  border-radius: 28px;
+  border: 3px solid var(--ink);
+  background: #fff;
+}
+.level h2 {
+  margin: 0 0 12px;
+  font-size: 1.4rem;
+  display: flex;
+  gap: 8px;
+  align-items: baseline;
+  flex-wrap: wrap;
+}
+.level h2 small {
+  font-weight: 600;
+  opacity: 0.7;
+  font-size: 0.9rem;
+}
+.lv1 {
+  background: #fff3df;
+}
+.lv2 {
+  background: #e8f9ee;
+}
+.lv3 {
+  background: #fff0f6;
+}
+.lv4 {
+  background: #eaf4ff;
+}
+.lv5 {
+  background: #f3ecff;
+}
+.tiles {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
+  gap: 14px;
+}
+.tile {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  align-items: center;
+  text-align: center;
+  text-decoration: none;
+  background: #fff;
+  border: 3px solid var(--ink);
+  border-radius: var(--r);
+  padding: 26px 10px 12px;
+  box-shadow: var(--shadow);
+  transition: transform 0.12s;
+  min-height: 200px;
+}
+.tile:hover,
+.tile:focus-visible {
+  transform: translateY(-4px) rotate(-1deg);
+}
+.tile .big {
+  font-size: 3rem;
+  line-height: 1;
+}
+.tile strong {
+  font-size: 1.05rem;
+}
+.tile .sub {
+  font-size: 0.82rem;
+  opacity: 0.75;
+}
+.tile .stars {
+  margin-top: auto;
+  font-size: 0.95rem;
+  font-weight: 800;
+  min-height: 1.3em;
+}
+.tile .num {
+  position: absolute;
+  top: -12px;
+  left: -8px;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: var(--yellow);
+  border: 3px solid var(--ink);
+  display: grid;
+  place-items: center;
+  font-weight: 900;
+}
+.tile.done {
+  background: #f1fff9;
+}
+.tile.next {
+  outline: 4px dashed var(--orange);
+  outline-offset: 3px;
+  animation: bob 1.6s ease-in-out infinite;
+}
+@keyframes bob {
+  50% {
+    transform: translateY(-5px);
+  }
+}
+.foot {
+  text-align: center;
+  padding: 20px;
+  font-size: 0.8rem;
+  opacity: 0.7;
+}
+
+.resume-tag {
+  font-size: 0.8rem;
+  font-weight: 800;
+  background: var(--yellow);
+  border: 2px solid var(--ink);
+  border-radius: 999px;
+  padding: 1px 10px;
+}
+
+@media (max-width: 560px) {
+  body {
+    font-size: 16px;
+  }
+  .hero-btns {
+    margin-left: 0;
+  }
+  .tiles {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .tile {
+    min-height: 180px;
+  }
+}

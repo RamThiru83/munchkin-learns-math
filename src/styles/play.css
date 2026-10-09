@@ -1,0 +1,181 @@
+/* Play page frame: bar, owl banner, stage, progress dots, finish overlay, welcome-back card. */
+.page-play {
+  display: flex;
+  flex-direction: column;
+  height: 100dvh;
+  overflow: hidden;
+  background: var(--bg);
+}
+.bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border-bottom: 3px solid var(--ink);
+  background: #fff;
+  flex-wrap: wrap;
+}
+.bar-title {
+  font-weight: 900;
+  font-size: 1.1rem;
+  flex: 1;
+  min-width: 140px;
+}
+.banner {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 14px;
+  background: #fffbe8;
+  border-bottom: 3px solid var(--ink);
+  font-weight: 800;
+  font-size: clamp(1rem, 2.6vw, 1.35rem);
+  min-height: 62px;
+}
+.banner span {
+  flex: 1;
+}
+.banner.good {
+  background: #d9fbe9;
+}
+.banner.try {
+  background: #ffe9ef;
+}
+.banner.pulse {
+  animation: pulse 0.6s;
+}
+@keyframes pulse {
+  40% {
+    transform: scale(1.015);
+  }
+}
+.stage {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  touch-action: manipulation;
+}
+.stage.demo-running {
+  pointer-events: none;
+}
+.dots {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+  padding: 6px;
+  background: #fff;
+  border-top: 3px solid var(--ink);
+}
+.dot {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  border: 3px solid var(--ink);
+  background: #fff;
+}
+.dot.full {
+  background: var(--green);
+}
+.dot.now {
+  background: var(--yellow);
+}
+.err {
+  font-weight: 800;
+  padding: 2rem;
+  text-align: center;
+}
+.overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(43, 45, 66, 0.55);
+  display: grid;
+  place-items: center;
+  z-index: 50;
+  padding: 16px;
+}
+.overlay .card {
+  background: #fff;
+  border: 4px solid var(--ink);
+  border-radius: 30px;
+  padding: 22px;
+  text-align: center;
+  max-width: 460px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  animation: pop 0.4s cubic-bezier(0.3, 1.5, 0.5, 1);
+}
+.overlay .row {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  justify-content: center;
+  margin-top: 8px;
+}
+.bigstars {
+  font-size: 2.4rem;
+}
+@keyframes pop {
+  from {
+    transform: scale(0.5);
+    opacity: 0;
+  }
+}
+.confetti-layer {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  overflow: hidden;
+  z-index: 60;
+}
+.confetti-layer i {
+  position: absolute;
+  top: -20px;
+  width: 10px;
+  height: 16px;
+  border-radius: 2px;
+  animation: fall linear forwards;
+}
+@keyframes fall {
+  to {
+    transform: translateY(110vh) rotate(720deg);
+  }
+}
+
+/* Welcome-back card */
+.resume-card {
+  margin: auto;
+  background: #fff;
+  border: 4px solid var(--ink);
+  border-radius: 30px;
+  padding: 22px;
+  text-align: center;
+  max-width: 460px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  animation: pop 0.4s cubic-bezier(0.3, 1.5, 0.5, 1);
+}
+.resume-card h2 {
+  margin: 0.2em 0;
+}
+.resume-card p {
+  margin: 0 0 6px;
+  font-weight: 700;
+}
+.resume-card .row {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+.resume-card .btn {
+  min-height: 56px;
+}
