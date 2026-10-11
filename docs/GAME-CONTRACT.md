@@ -67,4 +67,5 @@ export default {
 - Mathematical correctness: verify puzzles and answers (a quick Node brute-force check is ideal; keep it as an exported `_test` object or a test if it is reusable).
 - Original content only: no text copied from the book, no real children's names.
 - Respect that sound and voice may be off: the banner text must always carry the instruction.
+- Never speak over your own unfinished line: `await` the speech promise before the game's next line (a child's tap may interrupt, the game may not); pace counting-aloud animations on the clips; demos wait for each narration. Do not lock input while a line plays (except in Watch demos). See [VOICE.md](VOICE.md).
 - `npm run verify` must pass before publishing.

@@ -18,6 +18,13 @@ number combination), the whole line falls back to the browser's own speech voice
   link directly) uses the browser voice.
 - `<html data-voice="recorded|browser">` shows which voice spoke last (used by `tests/voice.spec.js`).
 - `npm run check` reports how many planned sentences have no recording yet.
+- With the voice off, `say()` still takes a reading time (250 ms + 30 ms per character, max 2 s) so games pace
+  the same way; the tests set `nilaa:fasttests` to skip that. `VOICE=1 npm test` runs the tests with the voice on.
+- A game that builds lines from several values can export `_voiceLines` (an array of every line it can say);
+  `plan.mjs` includes them. Otherwise template lines are filled in from the logs (`templates.mjs`).
+- Games must never speak over their own unfinished line: `await` the promise from `api.prompt/cheer/nudge/say`
+  (optionally capped at `1500 + 90 × characters` ms) before the next line, pace counting-aloud animations on the
+  clips (~0.7 s per number), and let demos wait for each narration. A child's tap may interrupt; the game may not.
 
 ## Recording new or changed lines (after adding a game or changing wording)
 
@@ -38,10 +45,14 @@ number combination), the whole line falls back to the browser's own speech voice
 6. `npm run verify`, listen to a few lines, commit `audio/voice/` with the code.
 
 The master copy of the recordings (untrimmed clips from Cloud Shell, named by `clipName()`) is kept in the Mac folder
-"Munchkin Learns Math - site/voice-recordings/" (for v1.6.0: `chirp3hd-achernar_raw-clips_20261011.zip`). To re-pack
+"Munchkin Learns Math - site/voice-recordings/" (v1.6.1: `chirp3hd-achernar_raw-clips_20261011b.zip.part0–3`, joined with `cat`; see its README.txt). To re-pack
 without re-recording: `bash scripts/voice/trim.sh <that zip> <clips folder>` then `node scripts/voice/pack.mjs <clips folder>`.
 
 ## Quality checks done (Oct 2026)
+
+- v1.6.1: with the voice on, every play-through was logged (`?voicelog`, see `scripts/voice/`): no line is cut by
+  the game itself any more (remaining cuts in the logs follow the test's own taps). Random-play coverage after the
+  extra recordings: about 98% of lines fully recorded.
 
 - Coverage: lines logged in a separate random-play run that was not used for planning: 94.9% were fully recorded;
   the rest (rare number combinations) used the browser voice.
