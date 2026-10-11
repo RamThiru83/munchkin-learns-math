@@ -179,3 +179,18 @@
 .resume-card .btn {
   min-height: 56px;
 }
+
+/* Talk-together panel: questions for the grown-up (not spoken aloud). */
+.talk {
+  padding: 6px 14px 8px;
+  background: #eef6ff;
+  border-bottom: 3px solid var(--ink);
+  font-size: 0.95rem;
+}
+.talk ul {
+  margin: 2px 0 0;
+  padding-left: 1.2em;
+}
+.talk li {
+  margin: 2px 0;
+}
