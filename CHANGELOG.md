@@ -2,6 +2,12 @@
 
 Versions follow [semantic versioning](https://semver.org/): patch = fixes, minor = new games or features, major = changes to saved data or the game contract.
 
+## 1.6.0 — 2026-10-11
+
+- **Recorded voice:** every game now speaks with Google's Chirp 3 HD "Achernar" voice, the same narrator as the Little Scientists Club videos, instead of the device's robotic speech. About 5,600 sentences were recorded once and ship as one voice pack per game (`audio/voice/`), loaded when the game opens. Any line that was not recorded, or a device that cannot play the packs, uses the browser voice as before.
+- On iPhone/iPad the voice plays even with the silent switch on (Safari 16.4+).
+- New: `docs/VOICE.md`, `scripts/voice/` (collect, plan, record in Cloud Shell, speech-recognition check, pack), decision record 0007, `tests/voice.spec.js`. Tests now run with the voice off except the voice test.
+
 ## 1.5.0 — 2026-10-10
 
 Six new games from the research-based plan (see the "New games plan" report), bringing the total to 30:

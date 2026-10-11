@@ -3,3 +3,6 @@ test-results/
 playwright-report/
 .DS_Store
 *.log
+voice-todo.json
+voice-logs/
+voice_clips*.zip

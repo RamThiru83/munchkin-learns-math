@@ -15,7 +15,15 @@ export default defineConfig({
   workers: process.env.CI ? 2 : 6,
   retries: process.env.CI ? 1 : 0,
   reporter: process.env.CI ? 'github' : 'list',
-  use: { baseURL: `http://localhost:${PORT}${path}`, launchOptions },
+  use: {
+    baseURL: `http://localhost:${PORT}${path}`,
+    launchOptions,
+    // Voice off by default so tests do not wait for recorded speech; tests/voice.spec.js turns it on.
+    storageState: {
+      cookies: [],
+      origins: [{ origin: `http://localhost:${PORT}`, localStorage: [{ name: 'nilaa:voice', value: 'false' }] }],
+    },
+  },
   projects: [
     { name: 'desktop', use: { viewport: { width: 1024, height: 768 } } },
     { name: 'phone', use: { ...devices['Pixel 5'], viewport: { width: 390, height: 780 }, launchOptions } },

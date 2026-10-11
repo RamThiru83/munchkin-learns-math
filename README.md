@@ -6,11 +6,11 @@ Gentle, interactive maths games for little learners (about ages 4–7, played wi
 
 - 30 original games, each with five rounds that get a little harder each time.
 - Every game has a **Watch** button that plays a narrated demonstration of the task.
-- Voice read-aloud (browser speech), soft sounds, no scores to lose, no timers.
+- Read-aloud in a recorded voice (Google Chirp 3 HD "Achernar", the Little Scientists Club narrator), with the browser's voice as a fallback; soft sounds, no scores to lose, no timers.
 - Progress is saved on the device after every round; a child can carry on from the same round next time.
 - Newer games offer **💬 Talk** prompts: short questions for the grown-up to ask while playing.
 - The **For grown-ups** page has notes for each game and a research-based age guide for each level (35 checked references).
-- No sign-in, no tracking, no network requests: the whole site is one self-contained `index.html`.
+- No sign-in, no tracking, no third-party requests: the site is one self-contained `index.html` plus its own voice packs (`audio/voice/`).
 
 The games are inspired by the preschool maths-circle activities described in the book below. This is an independent project, not affiliated with the author or publisher; all games, drawings and wording are original.
 
@@ -49,8 +49,9 @@ src/
   content/              data: levels and games (registry.js), age guide, book citation
   activities/           one file per game + _template.js; index.js is generated
   styles/               base, home, play, games, grown-ups CSS
-scripts/                build, serve, check, gen-index, new-game
-tests/                  Playwright: smoke, resume, playthrough/<game>
+scripts/                build, serve, check, gen-index, new-game; voice/ (recorded-voice tools)
+audio/voice/            recorded voice packs (one per game + app) and plan.json
+tests/                  Playwright: smoke, resume, voice, playthrough/<game>
 docs/                   how it works and how to maintain it
 ```
 
@@ -62,6 +63,7 @@ docs/                   how it works and how to maintain it
 - [docs/ADDING-A-GAME.md](docs/ADDING-A-GAME.md) — step by step.
 - [docs/CONTENT-GUIDE.md](docs/CONTENT-GUIDE.md) — tone, audience, accessibility, originality.
 - [docs/AGE-GUIDE-SOURCES.md](docs/AGE-GUIDE-SOURCES.md) — how the age bands were sourced and checked.
+- [docs/VOICE.md](docs/VOICE.md) — the recorded voice: how it plays and how to record new lines.
 - [docs/BACKLOG.md](docs/BACKLOG.md) — known issues and ideas.
 - [docs/decisions/](docs/decisions/) — why things are the way they are.
 - [CHANGELOG.md](CHANGELOG.md) — what changed in each version.
