@@ -22,18 +22,24 @@ export const ACTIVITIES = [
   // ---- Level 1: Seeds ----
   { id: 'same-or-more', level: 1, title: 'Same or More?', emoji: '🍓', blurb: 'Are there the same number of berries and baskets?' },
   { id: 'seats-for-everyone', level: 1, title: 'Seats for Everyone', emoji: '🪑', blurb: 'Give every friend one seat.' },
+  { id: 'number-path-race', level: 1, title: 'Number Path Race', emoji: '🛤️', blurb: 'Hop along the numbers, one by one.' },
+  { id: 'quick-peek', level: 1, title: 'Quick Peek', emoji: '✨', blurb: 'How many dots? Take a quick look!' },
   { id: 'odd-one-out', level: 1, title: 'Odd One Out', emoji: '🔎', blurb: 'Which one is different? Any of them could be!' },
   { id: 'morning-order', level: 1, title: 'A Day in Order', emoji: '☀️', blurb: 'Put the pictures in the right order.' },
   // ---- Level 2: Sprouts ----
   { id: 'mirror-pegboard', level: 2, title: 'Mirror Pegboard', emoji: '🪞', blurb: 'Make the shape on the other side of the mirror.' },
+  { id: 'hidden-beads', level: 2, title: 'Hidden Beads', emoji: '🥤', blurb: 'Some beads hide under the cup. How many?' },
   { id: 'snowflakes', level: 2, title: 'Fold, Cut, Unfold', emoji: '❄️', blurb: 'Snip the paper, then open it up.' },
   { id: 'missing-shape', level: 2, title: 'The Missing Shape', emoji: '🧩', blurb: 'Which shape fits in the empty square?' },
   { id: 'rope-rings', level: 2, title: 'Rope Rings', emoji: '⭕', blurb: 'Sort things into one ring, the other, or both.' },
+  { id: 'teddy-sees', level: 2, title: 'What Does Teddy See?', emoji: '🧸', blurb: 'What do the toys look like from Teddy\'s seat?' },
   { id: 'ant-on-band', level: 2, title: 'The Ant on the Band', emoji: '🐜', blurb: 'Follow the ant around a twisty paper band.' },
   // ---- Level 3: Buds ----
   { id: 'pour-the-same', level: 3, title: 'Pour the Same', emoji: '🥛', blurb: 'Does pouring change how much there is?' },
+  { id: 'equal-towers', level: 3, title: 'Equal Towers & Bars', emoji: '🧱', blurb: 'Make the towers the same, then tell it with bars.' },
   { id: 'dice-race', level: 3, title: 'Dice Race', emoji: '🎲', blurb: 'Which number wins more often?' },
   { id: 'build-from-picture', level: 3, title: 'Build the Picture', emoji: '🔷', blurb: 'Fit the shapes together to match.' },
+  { id: 'tower-to-the-mark', level: 3, title: 'Tower to the Mark', emoji: '📏', blurb: 'Build up to the line, then measure.' },
   { id: 'which-room-larger', level: 3, title: 'Which Room Is Larger?', emoji: '🏠', blurb: 'Count the squares to compare rooms.' },
   { id: 'squares-grow', level: 3, title: 'Squares That Grow', emoji: '🟧', blurb: 'Add a corner and a square gets bigger.' },
   // ---- Level 4: Blossoms ----
