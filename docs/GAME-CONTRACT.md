@@ -25,6 +25,7 @@ export default {
   id: ID,                        // ✔︎ equals the file name and the registry id
   rounds: ROUNDS.length,         // ✔︎ number of rounds (currently 5 for every game)
   parentNote: '…',               // ✔︎ 2–3 sentences shown on the For grown-ups page
+  talkPrompts: ['…', '…'],       // ✔︎ (games added from v1.5) 2–3 questions for the grown-up, beyond counting
   async start(api) {             // ✔︎
     let alive = true;            // set false in destroy(); check after every await
     let round = resumeRound(api, ROUNDS.length); // ✔︎ start on the saved round
@@ -49,6 +50,7 @@ export default {
 | `api.nudge(text)` | Gentle "try again" banner + soft sound + speech. Never "wrong!". |
 | `api.stage(i, n)` | Call at the start of each round: shows progress dots and **saves the round** so the child can resume. The first call must be for the starting round (never call `stage(0, …)` before a resumed round). |
 | `api.resume` | Zero-based round to start on (0 = fresh start). Read it through `resumeRound(api, total)`. |
+| `api.setTalk(list)` | Replace the talk-together questions (e.g. per round). Shown under "💬 Talk" in the bar; not spoken aloud. |
 | `api.setDemo(fn)` | Registers the Watch demo: an async function that animates a correct solution of the **current** round and leaves the child on that round. |
 | `api.finish()` | Call once after the last round: clears the saved round, awards stars, shows the celebration. |
 | `api.css(text)` | Adds a `<style>` that is removed when the game closes. Prefix every selector with `.a-<id>`. |

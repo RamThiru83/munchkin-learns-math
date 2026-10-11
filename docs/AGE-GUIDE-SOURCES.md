@@ -34,6 +34,26 @@ Checked but left out: Spinillo & Bryant (1991, Child Development 62(3), doi 10.2
 
 Independent re-check (same month): PubMed records for Boyer et al. 2008, Mody & Carey 2016, Denison & Xu 2014, Friedman 1990 and Zippert et al. 2020; Crossref records for Klahr & Robinson 1981, Welsh 1991, Siegler & Svetina 2002, Outhred & Mitchelmore 2000, Harris et al. 2013, Kazakoff & Bers 2014, Warren & Cooper 2008 and Friedman 1990; the Siegler & Svetina percentages (20% / 48% / 78%) were read in the author-hosted PDF; the Harris et al. 5½-year finding in the ERIC abstract. Not read in full: the two Piaget books (catalogue entries only) and Warren & Cooper (title and DOI only).
 
+## References added in v1.5.0 (October 2026)
+
+| # | Reference | How verified | Claim used |
+|---|---|---|---|
+| 23 | Ramani & Siegler 2008 | Abstract read (Child Development; DOI resolves) | Linear numbered board games improved low-income preschoolers' number skills; colour-board control did not |
+| 24 | Laski & Siegler 2014 | Abstract read (PubMed/APA) | Counting on from the token's square improved learning more than counting from 1 |
+| 25 | Cheung & McBride 2017 | ERIC EJ1144499 abstract read; DOI 10.1080/10409289.2016.1258932 | Hong Kong RCT (n = 88): parent–child number board games improved numeracy and interest; larger with parent training |
+| 26 | Clements et al. 2011 | Abstract read (JRME) | Building Blocks large cluster RCT; learning trajectories include subitizing and measurement |
+| 27 | Kullberg et al. 2020 | Crossref record and abstract read | Swedish preschool part–whole intervention (finger patterns, units of five) |
+| 28 | Björklund, Marton & Kullberg 2021 | Abstract read (Springer) | Critical aspects of early arithmetic: part–whole, units of five and ten |
+| 29 | MOE Singapore 2023 (NEL Educators' Guide: Numeracy) | Official PDF read | Part–whole to 10, ten frames, concrete–pictorial–abstract, comparing sets |
+| 30 | MoE PRC 2012 Guidelines 3–6 | Official notice page; indicator text from two reproductions (official .doc unreadable) | "2 and 3 together make 5" (4–5); simple maps (5–6) |
+| 31 | Finnish National Agency for Education 2022 | Official English PDF read | Location/position words; measuring and comparing |
+| 32 | Hawes, Gilligan-Lee & Mix 2022 | Abstract read (PubMed) | Spatial training improves maths, g ≈ 0.28 |
+| 33 | Fyfe et al. 2014 | Abstract read (Springer) | Concreteness fading: move from concrete to abstract representations |
+| 34 | Kaur 2019 | Abstract read (Springer) | Bar model (part–whole, comparison); evidence mainly with older pupils |
+| 35 | Skolverket 2018 (Lpfö 18) | Goals as quoted in Skolverket's Lärportalen module (Skolverket's own site was not reachable) | Measurement, comparison among preschool maths goals |
+
+Detailed research notes behind these (Nordic, China, Singapore, game-based evidence) and the plan report are kept outside the repo in the "Munchkin Learns Math - planning" folder.
+
 ## Updating the guide
 
 - Cite only sources you have located and read (abstract at minimum). Record how in the table above.

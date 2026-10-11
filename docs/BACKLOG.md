@@ -7,11 +7,17 @@ Known issues and ideas, roughly by priority. Move items to CHANGELOG.md when don
 - **Wolf, Goat and Cabbage:** in `sail()`, `state.boat === 0 && history.length === 1` can never be true, so the line "The boat is back. Who goes next?" never plays (probably meant `history.length === 2`). Marked `TODO(bug)` in the file.
 - **Builder Team (construction-foreman):** `turnText` is created but never added to the SVG, so "Turn n" / "Done in n turns!" never show in the scene. Marked `TODO(bug)`.
 
+## Next release (v1.6, planned)
+
+- Pattern Train, Four-Colour Map, Dots and Bars, Right-and-Up Paths, Feast Seating, Cubes into Rectangles (see the new-games plan).
+- Add 💬 Talk prompts to the original 24 games (then drop the exemption list in scripts/check.mjs).
+
 ## Usability
 
 - Some touch targets are below 56 px on a 360 px phone: Dice Race 6×6 grid (~50 px), Make It Twice as Big 9×9 grid (~33 px), small triangles in Build the Picture with 8 pieces, round-5 pair tags in All the Labels Are Wrong.
 - On small phones a few round 4–5 screens need a little vertical scrolling (Robot Walks long programs, Make It Twice as Big buttons, A Day in Order 8 cards, Fold Cut Unfold).
 - Dice Race round 5 uses real random rolls, so the child's team can lose; the game says so kindly and still counts the round.
+- New in 1.5: Number Path Race squares are ~47 px on desktop rounds 3–4 (path kept straight on purpose); What Does Teddy See? toys are small on the table (~30 px) and on 390 px phones the Next button needs a small scroll.
 - Tested in headless Chromium only; test on real iPhone/iPad Safari and Android.
 
 ## Code health
