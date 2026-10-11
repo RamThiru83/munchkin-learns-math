@@ -3,7 +3,7 @@
 //  - each game module follows the contract (docs/GAME-CONTRACT.md)
 //  - src/activities/index.js is up to date
 //  - levels, age guide and citations line up
-import { readdirSync, readFileSync } from 'node:fs';
+import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { LEVELS, ACTIVITIES } from '../src/content/registry.js';
 import { AGE_LEVELS, AGE_REFS, AGE_INTRO, AGE_CAVEAT } from '../src/content/age-guide.js';
@@ -107,8 +107,33 @@ for (const t of texts)
     for (const n of m[1].split(/,\s*/).map(Number))
       if (n < 1 || n > AGE_REFS.length) fail(`age guide cites [${n}] but there are ${AGE_REFS.length} references`);
 
+// ---- recorded voice packs (docs/VOICE.md) ----
+let voiceNote = 'no voice packs';
+if (existsSync('audio/voice/plan.json')) {
+  const plan = JSON.parse(readFileSync('audio/voice/plan.json', 'utf8'));
+  let missing = 0;
+  const noPack = [];
+  for (const p of ['app', ...ids]) {
+    const f = `audio/voice/${p}.bin`;
+    if (!existsSync(f)) {
+      noPack.push(p); // not an error: its lines use the browser voice until recorded (docs/VOICE.md)
+      continue;
+    }
+    const b = readFileSync(f);
+    const clips = JSON.parse(b.subarray(4, 4 + b.readUInt32LE(0)).toString('utf8')).clips || {};
+    missing += (plan.packs[p] || []).filter((k) => !(k in clips)).length;
+  }
+  voiceNote =
+    `voice packs ok (${Object.keys(plan.texts).length} sentences planned` +
+    (missing ? `, ${missing} not yet recorded` : '') +
+    (noPack.length ? `; no voice pack yet: ${noPack.join(', ')}` : '') +
+    ')';
+}
+
 if (problems.length) {
   console.error(`✗ ${problems.length} problem(s):\n  - ${problems.join('\n  - ')}`);
   process.exit(1);
 }
-console.log(`✓ ${ids.length} games, ${LEVELS.length} levels, ${AGE_REFS.length} age-guide references: all consistent`);
+console.log(
+  `✓ ${ids.length} games, ${LEVELS.length} levels, ${AGE_REFS.length} age-guide references, ${voiceNote}: all consistent`,
+);
