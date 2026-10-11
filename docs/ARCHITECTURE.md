@@ -46,4 +46,4 @@ The build is reproducible (no dates), so CI can rebuild and confirm the committe
 
 ## Browser support
 
-Evergreen browsers from 2020 on (Chrome/Edge, Safari 14+, Firefox). Uses ES2020, pointer events, WebAudio, `speechSynthesis` (optional: the game still works without voice), CSS grid and `dvh` units.
+Evergreen browsers from 2020 on (Chrome/Edge, Safari 14+, Firefox). Uses ES2020, pointer events, WebAudio (also plays the recorded voice packs, see [VOICE.md](VOICE.md)), `speechSynthesis` (fallback voice; the game still works without voice), CSS grid and `dvh` units.

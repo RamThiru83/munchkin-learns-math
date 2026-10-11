@@ -45,7 +45,7 @@ export default {
 | Member | What it does |
 |---|---|
 | `api.root` | The stage element (empty flex column) to draw into. |
-| `api.prompt(text)` | Show and speak the instruction (≤ 12 simple words). Returns a promise that resolves when speech ends. |
+| `api.prompt(text)` | Show and speak the instruction (≤ 12 simple words). Returns a promise that resolves when speech ends. Spoken with the recorded voice when every sentence is recorded ([VOICE.md](VOICE.md)), otherwise the browser voice. |
 | `api.cheer(text)` | Positive banner + chime + speech. |
 | `api.nudge(text)` | Gentle "try again" banner + soft sound + speech. Never "wrong!". |
 | `api.stage(i, n)` | Call at the start of each round: shows progress dots and **saves the round** so the child can resume. The first call must be for the starting round (never call `stage(0, …)` before a resumed round). |

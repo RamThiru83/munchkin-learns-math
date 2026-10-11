@@ -13,7 +13,8 @@
    npx playwright test tests/playthrough/shape-hunt.spec.js --project=desktop --repeat-each=3
    ```
 6. **Grown-ups page.** The `parentNote` appears automatically. If the game changes what a level covers, update that level in `src/content/age-guide.js` (with a checked source; see [AGE-GUIDE-SOURCES.md](AGE-GUIDE-SOURCES.md)).
-7. **Release:** bump the version in `package.json` (minor for a new game), add a CHANGELOG entry, run `npm run verify`, then publish ([MAINTENANCE.md](MAINTENANCE.md)).
+7. **Record its voice.** Until then its lines use the browser voice and `npm run check` lists them as not yet recorded. Collect, plan, record and pack as in [VOICE.md](VOICE.md) (only new sentences are recorded).
+8. **Release:** bump the version in `package.json` (minor for a new game), add a CHANGELOG entry, run `npm run verify`, then publish ([MAINTENANCE.md](MAINTENANCE.md)).
 
 ## Adding a level
 

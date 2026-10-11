@@ -29,4 +29,5 @@ Who it is for: children of about 4–7, usually with a parent beside them. The p
 
 ## Privacy
 
-- No accounts, analytics, ads, network requests or third-party scripts. Saved data stays in the browser.
+- No accounts, analytics, ads or third-party scripts; the only downloads are the site's own voice packs. Saved data stays in the browser.
+- New or changed spoken lines must be recorded with the series voice ([VOICE.md](VOICE.md)).

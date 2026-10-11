@@ -38,7 +38,8 @@ No local git credentials? Use GitHub's web upload ("Add file → Upload files") 
 
 - The localStorage prefix `nilaa:` and the keys in `src/app/progress.js` — changing them erases every child's stars. Shape changes need a `SCHEMA` bump and a migration.
 - Existing game ids — saved progress is stored under them. Use `RENAMED_IDS`.
-- The single-file build — the site must keep working as one `index.html` with no network requests.
+- The single-file build — the site must keep working as one `index.html`. The only requests it makes are for its own voice packs (`audio/voice/`), and it must still work without them ([decisions/0007](decisions/0007-recorded-voice.md)).
+- Spoken wording: a changed or new line needs recording ([VOICE.md](VOICE.md)), otherwise it falls back to the browser voice.
 
 ## Routine upkeep (about once a year)
 
