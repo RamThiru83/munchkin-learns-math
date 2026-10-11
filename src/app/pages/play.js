@@ -10,6 +10,7 @@ import { ACTIVITIES } from '../../content/registry.js';
 import { loaders } from '../../activities/index.js';
 import { awardStars, savedRound, saveRound, clearRound } from '../progress.js';
 import { owl, toggle, roundDots } from '../ui.js';
+import { loadVoicePack } from '../../lib/speech.js';
 
 const { h, say, sfx, confetti, settings, setVoiceOn, stopSpeaking } = core;
 
@@ -26,6 +27,8 @@ export function renderPlay(app, id) {
     location.hash = '#/';
     return { destroy() {} };
   }
+  loadVoicePack('app');
+  loadVoicePack(id);
   app.className = `page-play lv${meta.level}`;
 
   // ---- frame ----
