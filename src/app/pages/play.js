@@ -50,16 +50,30 @@ export function renderPlay(app, id) {
   const stage = h('div', { class: 'stage' });
   const watchBtn = h('button', { class: 'btn small watch', hidden: true }, '👀 Watch');
   const againBtn = h('button', { class: 'btn small', title: 'Start this round again' }, '↻ Again');
+  // "Talk together": short questions for the grown-up (from the game's talkPrompts or api.setTalk).
+  const talkBtn = h(
+    'button',
+    { class: 'btn small talk-btn', hidden: true, 'aria-expanded': 'false', title: 'Questions to ask together' },
+    '💬 Talk',
+  );
+  const talkList = h('ul', {});
+  const talkPanel = h(
+    'aside',
+    { class: 'talk', hidden: true, 'aria-label': 'Questions to ask together' },
+    h('strong', {}, 'Ask together: '),
+    talkList,
+  );
   const bar = h(
     'div',
     { class: 'bar' },
     h('a', { class: 'btn small', href: '#/' }, '← Map'),
     h('div', { class: 'bar-title' }, `${meta.emoji} ${meta.title}`),
     watchBtn,
+    talkBtn,
     againBtn,
     toggle('🗣️', 'Voice', () => settings.voice, setVoiceOn),
   );
-  app.append(bar, banner, stage, dots);
+  app.append(bar, banner, talkPanel, stage, dots);
 
   // ---- state for the mounted game ----
   let game = null; // value returned by the game's start(): { destroy() }
@@ -86,6 +100,17 @@ export function renderPlay(app, id) {
       stage.classList.remove('demo-running');
     }
   });
+  talkBtn.addEventListener('click', () => {
+    sfx('tap');
+    talkPanel.hidden = !talkPanel.hidden;
+    talkBtn.setAttribute('aria-expanded', String(!talkPanel.hidden));
+  });
+  function setTalk(prompts) {
+    const list = Array.isArray(prompts) ? prompts.filter(Boolean) : [];
+    talkList.replaceChildren(...list.map((q) => h('li', {}, q)));
+    talkBtn.hidden = list.length === 0;
+    if (!list.length) talkPanel.hidden = true;
+  }
   againBtn.addEventListener('click', () => {
     sfx('tap');
     mount(currentRound);
@@ -131,6 +156,7 @@ export function renderPlay(app, id) {
       stage.append(h('p', { class: 'err' }, 'This game is still being made. Please come back soon!'));
       return;
     }
+    setTalk(mod.talkPrompts);
 
     /** The api object every game receives. See docs/GAME-CONTRACT.md. */
     const api = {
@@ -161,6 +187,7 @@ export function renderPlay(app, id) {
         }
         dots.replaceChildren(...roundDots(i, n));
       },
+      setTalk,
       setDemo(fn) {
         demoFn = fn;
         watchBtn.hidden = !fn;

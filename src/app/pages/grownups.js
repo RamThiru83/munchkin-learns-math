@@ -48,13 +48,19 @@ async function fillNotes(notes) {
       ),
     );
     for (const a of ACTIVITIES.filter((x) => x.level === lv.n)) {
-      let note;
+      let mod;
       try {
-        note = (await loaders[a.id]()).default.parentNote;
+        mod = (await loaders[a.id]()).default;
       } catch {
-        note = '(coming soon)';
+        mod = { parentNote: '(coming soon)' };
       }
-      parts.push(h('div', { class: 'note' }, h('h4', {}, `${a.emoji} ${a.title}`), h('p', {}, note || a.blurb)));
+      const talk =
+        Array.isArray(mod.talkPrompts) && mod.talkPrompts.length
+          ? h('p', { class: 'talk-note' }, h('strong', {}, 'Ask together: '), mod.talkPrompts.join(' · '))
+          : null;
+      parts.push(
+        h('div', { class: 'note' }, h('h4', {}, `${a.emoji} ${a.title}`), h('p', {}, mod.parentNote || a.blurb), talk),
+      );
     }
   }
   parts.push(
