@@ -30,6 +30,7 @@ for (const f of process.argv.slice(2)) {
     } catch {
       continue;
     }
+    if (typeof j.t !== 'string') continue;
     const pack = ids.has(j.g) ? j.g : 'app';
     (logged[pack] ||= []).push(j.t);
     for (const s of sentences(j.t)) add(pack, s);
@@ -41,6 +42,11 @@ for (const f of readdirSync('src/activities')) {
   if (ids.has(id)) for (const s of staticLines(`src/activities/${f}`)) if (s.length <= 100) add(id, s);
   if (ids.has(id))
     for (const t of expand(`src/activities/${f}`, logged[id] || [])) for (const s of sentences(t)) add(id, s);
+}
+// Games may list the lines they build themselves (export const _voiceLines = [...]).
+for (const id of ids) {
+  const mod = await import(`../../src/activities/${id}.js`);
+  for (const t of mod._voiceLines || []) for (const s of sentences(t)) add(id, s);
 }
 for (const s of staticLines('src/app/pages/play.js')) add('app', s);
 for (let n = 0; n <= 100; n++) add('app', String(n));

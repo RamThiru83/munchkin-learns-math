@@ -3,8 +3,28 @@
 #   python3 chirp_gen.py todo.json        -> voice_clips.zip   then   cloudshell download voice_clips.zip
 # todo.json = {"voice": "Achernar", "rate": 0.9, "items": {"<file name>": "<sentence>", ...}}
 # Safe to re-run: clips already made are skipped.
-import json, subprocess, urllib.request, urllib.error, base64, os, sys, zipfile, time, threading
+# Chirp sometimes ends a clip abruptly (the last sound chopped). Each clip is checked: if the last 25 ms
+# are loud, it is synthesised again (up to ATTEMPTS times) and the rendition with the quietest ending is kept.
+#   pip install --user -q imageio-ffmpeg      (needed for the check; without it clips are kept as they come)
+import json, subprocess, urllib.request, urllib.error, base64, os, sys, zipfile, time, threading, math, array
 from concurrent.futures import ThreadPoolExecutor
+ATTEMPTS = 3
+try:
+    import imageio_ffmpeg
+    FFMPEG = imageio_ffmpeg.get_ffmpeg_exe()
+except Exception:
+    FFMPEG = None
+
+def tail_db(data):
+    """Loudness of the last 25 ms relative to the loudest 25 ms (dB); 0 when it cannot be measured."""
+    if not FFMPEG: return 0
+    pcm = subprocess.run([FFMPEG, '-v', 'error', '-i', 'pipe:0', '-f', 's16le', '-ac', '1', '-ar', '16000', '-'],
+                         input=data, capture_output=True).stdout
+    a = array.array('h', pcm); n = len(a); w = 400
+    if n < 2 * w: return 0
+    rms = lambda seg: math.sqrt(sum(x * x for x in seg) / len(seg))
+    peak = max(rms(a[i:i + w]) for i in range(0, n - w, w)) or 1
+    return 20 * math.log10(max(rms(a[n - w:]), 1) / peak)
 
 PROJECT = 'little-scientists-511103'
 plan = json.load(open(sys.argv[1] if len(sys.argv) > 1 else 'todo.json'))
@@ -32,10 +52,16 @@ def job(kv):
     name, text = kv
     fn = 'clips/' + name
     if os.path.exists(fn) and os.path.getsize(fn) > 0: return
+    best = None
     for k in range(6):
         try:
             data = call(text)
-            open(fn, 'wb').write(data); return
+            db = tail_db(data)
+            if best is None or db < best[0]: best = (db, data)
+            if db < -20 or k + 1 >= ATTEMPTS:
+                open(fn, 'wb').write(best[1])
+                if best[0] >= -20: fails.append((name, text, 'abrupt ending %.0f dB' % best[0]))
+                return
         except urllib.error.HTTPError as e:
             msg = e.read().decode()[:160]
             if e.code in (400,): fails.append((name, text, msg)); return
