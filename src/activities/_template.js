@@ -30,6 +30,8 @@ export default {
   id: ID,
   rounds: ROUNDS.length,
   parentNote: 'Two or three sentences for the grown-up: the idea, what to ask, the common misconception.',
+  // Shown to the grown-up under "💬 Talk" (not spoken). Questions that go beyond counting; api.setTalk([...]) can change them per round.
+  talkPrompts: ['Which one did you look for?', 'How did you know?'],
 
   async start(api) {
     let alive = true; // false after destroy(); check it after every await
