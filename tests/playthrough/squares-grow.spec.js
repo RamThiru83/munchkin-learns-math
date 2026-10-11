@@ -11,6 +11,9 @@ import { watchErrors, currentDot } from '../helpers.js';
 
 const ID = 'squares-grow';
 
+// A tall viewport keeps the tile tray and the board on screen together, so drags never start or end off-screen.
+test.use({ viewport: { width: 1024, height: 1100 } });
+
 test(`playthrough: ${ID}`, async ({ page }, testInfo) => {
   test.skip(testInfo.project.name !== 'desktop', 'play-throughs run on desktop');
   test.setTimeout(300_000);
@@ -41,9 +44,11 @@ test(`playthrough: ${ID}`, async ({ page }, testInfo) => {
   // Drag the first tray tile onto the first free dashed cell. The page may still be scrolling smoothly when the tray
   // appears, so wait for both boxes to hold still and retry if the tile glided back.
   async function dragTileToGhost() {
-    const before = await tiles.count();
+    const state = async () =>
+      `${await tiles.count()}|${await game.locator('.ghost[data-claim]').count()}|${await currentDot(page)}|${await page.locator('.banner > span').innerText()}`;
+    const before = await state();
     const free = game.locator('.ghost:not([data-claim])').first();
-    for (let attempt = 0; attempt < 4; attempt++) {
+    for (let attempt = 0; attempt < 6; attempt++) {
       let from = await tiles.first().boundingBox();
       let to = await free.boundingBox();
       for (let i = 0; i < 20; i++) {
@@ -60,10 +65,12 @@ test(`playthrough: ${ID}`, async ({ page }, testInfo) => {
       await page.mouse.move(to.x + to.width / 2, to.y + to.height / 2, { steps: 8 });
       await page.mouse.up();
       try {
-        await expect(tiles).toHaveCount(before - 1, { timeout: 3000 });
+        // Success = something moved on: fewer tiles, a cell claimed, or the next step began (the tray can refill).
+        await expect.poll(state, { timeout: 3000 }).not.toBe(before);
         return;
       } catch (e) {
-        if (attempt === 3) throw e;
+        if (attempt === 5) throw e;
+        await page.waitForTimeout(400); // let the tile glide home before trying again
       }
     }
   }
