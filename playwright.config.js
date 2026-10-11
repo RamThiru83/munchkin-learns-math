@@ -1,5 +1,6 @@
 // Browser tests. `npm test` runs every game at desktop and phone size.
 //   TARGET=built npm test   -> test the built index.html instead of the source in src/
+//   VOICE=1 npm test        -> with the voice on (slower: games wait for speech as a child would hear it)
 //   CHROME=/path/to/chrome  -> use an existing Chromium instead of Playwright's download
 //   npx playwright test -g dice-race   -> one game only
 import { defineConfig, devices } from '@playwright/test';
@@ -18,10 +19,19 @@ export default defineConfig({
   use: {
     baseURL: `http://localhost:${PORT}${path}`,
     launchOptions,
-    // Voice off by default so tests do not wait for recorded speech; tests/voice.spec.js turns it on.
+    // Voice off by default so tests do not wait for recorded speech (VOICE=1 turns it on, as a child hears it);
+    // tests/voice.spec.js turns it on itself.
     storageState: {
       cookies: [],
-      origins: [{ origin: `http://localhost:${PORT}`, localStorage: [{ name: 'nilaa:voice', value: 'false' }] }],
+      origins: [
+        {
+          origin: `http://localhost:${PORT}`,
+          localStorage: [
+            { name: 'nilaa:voice', value: process.env.VOICE ? 'true' : 'false' },
+            { name: 'nilaa:fasttests', value: '1' }, // voice off: no reading pauses (see src/lib/speech.js)
+          ],
+        },
+      ],
     },
   },
   projects: [

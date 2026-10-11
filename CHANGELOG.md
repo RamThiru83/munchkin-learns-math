@@ -2,6 +2,16 @@
 
 Versions follow [semantic versioning](https://semver.org/): patch = fixes, minor = new games or features, major = changes to saved data or the game contract.
 
+## 1.6.1 — 2026-10-11
+
+Audit of all 30 games after the recorded voice went live (lags, voice skips, incoherent lines):
+
+- **No more self-interruptions:** every line a game speaks on its own (round intros, cheers before the next round, Watch demos, counting aloud in animations) now waits for the previous line to finish; the old character-count timeouts that cut the recorded voice short are gone. A child's own tap may still interrupt a line.
+- **Less waiting:** input is never locked while a line plays (except in Watch demos); fixed pauses after cheers are shorter; the game and its voice pack load together (no 1.5 s wait on the first lines, no mixed voices at the start); the next game's pack is fetched in the background.
+- **Coherent lines:** grammar slips ("1 are showing"), lines that did not match the screen, cheers repeated many times in a row, two fixed bugs from the backlog (Wolf, Goat and Cabbage "boat is back" line; Builder Team turn counter), Builder Team/Necklaces/Snowflakes/Same or More timing and wording fixes.
+- **Voice:** 1,800 more sentences recorded (number combinations that random play had not reached: dice sums, comparisons, "N comes before M", Double the Picture directions); clips with chopped endings re-recorded; all clips get a short fade-out. With the voice off, lines now take reading time so games pace the same way.
+- Maintenance: `VOICE=1 npm test` plays the games with the voice on; `?voicelog` troubleshooting log; games may export `_voiceLines`; `scripts/voice/chirp_gen.py` retries abrupt endings.
+
 ## 1.6.0 — 2026-10-11
 
 - **Recorded voice:** every game now speaks with Google's Chirp 3 HD "Achernar" voice, the same narrator as the Little Scientists Club videos, instead of the device's robotic speech. About 5,600 sentences were recorded once and ship as one voice pack per game (`audio/voice/`), loaded when the game opens. Any line that was not recorded, or a device that cannot play the packs, uses the browser voice as before.
