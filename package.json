@@ -1,6 +1,6 @@
 {
   "name": "munchkin-learns-math",
-  "version": "1.4.0",
+  "version": "1.5.0",
   "private": true,
   "description": "Gentle interactive maths games for little learners (ages ~4-7), inspired by Zvonkin's 'Math from Three to Seven'.",
   "type": "module",

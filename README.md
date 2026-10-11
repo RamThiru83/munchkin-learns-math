@@ -4,11 +4,12 @@ Gentle, interactive maths games for little learners (about ages 4–7, played wi
 
 **Live site:** https://ramthiru83.github.io/munchkin-learns-math/
 
-- 24 original games, each with five rounds that get a little harder each time.
+- 30 original games, each with five rounds that get a little harder each time.
 - Every game has a **Watch** button that plays a narrated demonstration of the task.
 - Voice read-aloud (browser speech), soft sounds, no scores to lose, no timers.
 - Progress is saved on the device after every round; a child can carry on from the same round next time.
-- The **For grown-ups** page has notes for each game and a research-based age guide for each level (22 checked references).
+- Newer games offer **💬 Talk** prompts: short questions for the grown-up to ask while playing.
+- The **For grown-ups** page has notes for each game and a research-based age guide for each level (35 checked references).
 - No sign-in, no tracking, no network requests: the whole site is one self-contained `index.html`.
 
 The games are inspired by the preschool maths-circle activities described in the book below. This is an independent project, not affiliated with the author or publisher; all games, drawings and wording are original.
