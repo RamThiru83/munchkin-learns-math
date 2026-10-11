@@ -11,6 +11,34 @@ import { generateIndex } from './gen-index.mjs';
 
 const dir = fileURLToPath(new URL('../src/activities/', import.meta.url));
 const problems = [];
+// Games added from v1.5 on must offer talk-together prompts for the grown-up (docs/GAME-CONTRACT.md).
+// The original 24 games are exempt until they are given prompts (see docs/BACKLOG.md).
+const NO_TALK_YET = new Set([
+  'same-or-more',
+  'seats-for-everyone',
+  'odd-one-out',
+  'morning-order',
+  'mirror-pegboard',
+  'snowflakes',
+  'missing-shape',
+  'rope-rings',
+  'ant-on-band',
+  'pour-the-same',
+  'dice-race',
+  'build-from-picture',
+  'which-room-larger',
+  'squares-grow',
+  'double-the-picture',
+  'block-chains',
+  'robot-walks',
+  'construction-foreman',
+  'tower-of-hanoi',
+  'ways-to-make-5',
+  'wolf-goat-cabbage',
+  'necklaces',
+  'shoes-in-dark',
+  'wrong-labels',
+]);
 const fail = (msg) => problems.push(msg);
 
 // registry
@@ -52,6 +80,10 @@ for (const id of ids) {
   if (!Number.isInteger(mod.rounds) || mod.rounds < 1) fail(`${id}: "rounds" must be a positive whole number`);
   if (typeof mod.parentNote !== 'string' || mod.parentNote.length < 40)
     fail(`${id}: parentNote is missing or too short`);
+  const talk = mod.talkPrompts;
+  if (talk !== undefined && !(Array.isArray(talk) && talk.every((q) => typeof q === 'string' && q.length > 5)))
+    fail(`${id}: talkPrompts must be an array of short questions`);
+  if (!NO_TALK_YET.has(id) && !(talk || []).length) fail(`${id}: new games (v1.5+) need talkPrompts`);
   if (!/^\/\*\*[\s\S]*?Game:/.test(src)) fail(`${id}: file must start with the standard /** Game: ... */ header`);
   if (!src.includes('api.setDemo(')) fail(`${id}: no Watch demo (api.setDemo)`);
   if (!src.includes('api.finish(')) fail(`${id}: never calls api.finish()`);
