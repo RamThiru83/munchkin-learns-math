@@ -219,7 +219,7 @@ export default {
         wins: 0,
       }));
       const best = lanes.reduce((b, l, i) => (l.ways > lanes[b].ways ? i : b), 0);
-      const st = { pick: null, pos: lanes.map(() => 0), rolls: 0, done: false };
+      const st = { pick: null, pos: lanes.map(() => 0), rolls: 0, done: false, said: null };
 
       wrap.replaceChildren(finger);
       const lanesBox = h('div', { class: 'lanes' });
@@ -289,7 +289,7 @@ export default {
         });
         lanes[i].who.classList.add('hop');
         setTimeout(() => lanes[i].who.classList.remove('hop'), 500);
-        api.prompt(`You picked the ${lanes[i].name}. Now roll!`);
+        return api.prompt(`You picked the ${lanes[i].name}. Now roll!`);
       }
 
       // Tumble animation: flicker random faces for ~ms, then land on `vals`.
@@ -348,12 +348,13 @@ export default {
         waysBox.hidden = false;
         afterRow.hidden = false;
         afterRow.scrollIntoView?.({ block: 'nearest', behavior: 'smooth' });
+        // The demo awaits this so its closing line never cuts the result.
         if (li === best) {
           if (st.pick === li)
-            api.cheer(pickPhrase([`The ${l.name} won! Good thinking!`, `Yes! The ${l.name} won the race!`]));
-          else api.cheer(`The ${l.name} won! More ways means more steps.`);
+            st.said = api.cheer(pickPhrase([`The ${l.name} won! Good thinking!`, `Yes! The ${l.name} won the race!`]));
+          else st.said = api.cheer(`The ${l.name} won! More ways means more steps.`);
         } else {
-          api.prompt(`The ${l.name} got lucky this time! Race again?`);
+          st.said = api.prompt(`The ${l.name} got lucky this time! Race again?`);
         }
       }
 
@@ -418,15 +419,16 @@ export default {
         if (!ok(e)) return;
         await pointAt(b.who);
         if (!ok(e)) return;
-        choose(best);
-        await sleep(700);
+        await choose(best); // "You picked the … Now roll!" must finish before the next line
         if (!ok(e)) return;
         await pointAt(roll10);
         if (!ok(e)) return;
         hideFinger();
-        api.prompt(
+        // Awaited: a short race could end (and speak) before this line is done.
+        await api.prompt(
           cfg.twoDice ? '7 has the most ways. Lots of quick rolls!' : 'Two faces, not one. Lots of quick rolls!',
         );
+        if (!ok(e)) return;
         busy = true;
         for (let k = 0; k < DEMO_MAX_ROLLS && ok(e) && !st.done; k++) {
           await rollOnce('demo');
@@ -434,7 +436,9 @@ export default {
         }
         if (!ok(e)) return;
         busy = false;
-        await sleep(1800);
+        await st.said; // the result line from finishRace
+        if (!ok(e)) return;
+        await sleep(400);
         if (!ok(e)) return;
         const winner = lanes.findIndex((l, i) => st.pos[i] >= cfg.steps);
         await api.say(
@@ -525,7 +529,7 @@ export default {
       async function allFound() {
         st.phase = 'wave';
         busy = true;
-        api.cheer('You found them all! Look at the line!');
+        const said = api.cheer('You found them all! Look at the line!');
         for (const x of cells) {
           if (!ok(e)) return;
           if (!x._open) {
@@ -534,7 +538,9 @@ export default {
           }
         }
         cells.filter((x) => x._s === 2 || x._s === 12).forEach((x) => x.classList.add('one'));
-        await sleep(900);
+        await said; // let the cheer finish before the "How many?" prompt
+        if (!ok(e)) return;
+        await sleep(300);
         if (!ok(e)) return;
         busy = false;
         st.phase = 'count';
@@ -559,7 +565,7 @@ export default {
           busy = true;
           c.classList.add('sel', 'hop');
           await api.cheer('Six ways to make 7! Only one way for 2.');
-          await sleep(1200);
+          await sleep(500);
           if (!ok(e)) return;
           busy = false;
           goRound(round + 1);
@@ -959,9 +965,11 @@ export default {
         if (t > r) {
           sfx('tap');
           nums.forEach((b) => b.classList.remove('glow'));
-          api.cheer(`${t} ways beats ${r} ways. Let us race!`);
+          const said = api.cheer(`${t} ways beats ${r} ways. Let us race!`);
           const w = await runRace();
           if (!ok(e) || w < 0) return;
+          await said; // a very short race must not cut this line
+          if (!ok(e)) return;
           if (w === 0) api.cheer(pickPhrase([`The ${me[1]} won! Great team!`, `Your team won the race!`]));
           else api.prompt(`The ${them[1]} got lucky! Your team still had more ways.`);
           afterRow.hidden = false;
@@ -1014,7 +1022,7 @@ export default {
         if (!ok(e) || w < 0) return;
         busy = true;
         await api.say(w === 0 ? 'More ways usually wins.' : 'A lucky surprise! More ways still usually wins.');
-        await sleep(1200);
+        await sleep(500);
         if (!ok(e)) return;
         reset();
         busy = false;

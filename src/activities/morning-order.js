@@ -9,8 +9,8 @@
  *   3. Six cards: dress, shoes, go chain plus eat and bed or teeth (teeth after eating).
  *   4. Seven cards: sleep to go, with a dressing chain and a washing-then-eating chain.
  *   5. Eight cards: adds teeth after eating, plus hair (after dressing) or bag (after waking).
- * Watch demo: rebuilds the current round, flies the cards into one valid random order, plays the
- *   story, then rebuilds fresh cards for the child.
+ * Watch demo: rebuilds the current round, flies the cards into one valid random order while telling
+ *   the story line by line, then rebuilds fresh cards for the child.
  * Notes: no test hooks are exported. Each round is a function returning { cards, rules } where a
  *   rule [a, b] means "a before b"; analyse() closes the rules transitively and lists every valid
  *   order. Wrong drops give the "why" sentence first, a glow on valid slots from the 2nd miss.
@@ -359,7 +359,7 @@ export default {
           const ok = R.cells.filter((_, j) => feasible(trial(id, j)));
           ok.forEach((c) => c.classList.add('glow'));
           later(() => ok.forEach((c) => c.classList.remove('glow')), 3000);
-          api.nudge('Try the glowing spot.');
+          api.nudge(R.wrongs % 2 ? 'Try the glowing spot.' : 'Drop it on a glowing spot.');
         } else api.nudge(why(next, id, k));
         return false;
       }
@@ -402,17 +402,14 @@ export default {
     }
     async function complete(my) {
       R.solved = true;
+      R.playing = true; // "Play again" waits until the first telling has finished
       R.handles.forEach((d) => d.disable());
       R.strip.classList.add('solved');
       R.spec.cards.forEach((c) => {
         R.els[c].style.cursor = 'default';
       });
-      api.cheer(pick(PHRASES));
-      await sleep(900);
-      if (!alive || my !== rid) return;
-      await playStory(my);
-      if (!alive || my !== rid) return;
-      api.cheer(R.orders.length > 1 ? 'Other orders can work too!' : 'That is how her morning goes!');
+      // the cheer plays out, then the story; Next is offered at once so she is never kept waiting
+      const cheer = Promise.race([api.cheer(pick(PHRASES)), sleep(3000)]);
       const last = roundIdx === ROUNDS.length - 1;
       R.actions.append(
         h(
@@ -443,6 +440,13 @@ export default {
           last ? 'Finish ⭐' : 'Next ➜',
         ),
       );
+      await cheer;
+      if (!alive || my !== rid) return;
+      await sleep(300);
+      if (!alive || my !== rid) return;
+      await playStory(my);
+      if (!alive || my !== rid) return;
+      api.cheer(R.orders.length > 1 ? 'Other orders can work too!' : 'That is how her morning goes!');
     }
 
     function startRound(i) {
@@ -459,22 +463,23 @@ export default {
       const my = build(i, spec);
       const ord = pick(R.orders);
       await say1('Watch. What happens first?', 1200);
+      // each card is narrated with the story line as it flies in (the line finishes before the next)
       for (let k = 0; k < ord.length; k++) {
         if (!alive || my !== rid) return;
         const el = R.els[ord[k]];
-        const lead = k === 0 ? 'Number one:' : `Number ${k + 1}:`;
-        api.prompt(`${lead} she ${CARDS[ord[k]].v}.`);
+        const lead = k === 0 ? 'First' : k === ord.length - 1 ? 'Finally' : 'Then';
+        const line = api.prompt(`${lead}, she ${CARDS[ord[k]].v}.`);
         await flyTo(el, R.slots[k], { duration: 650 });
         if (!alive || my !== rid) return;
         R.order[k] = ord[k];
         sync();
         sfx('drop');
-        await sleep(450);
+        await Promise.race([line, sleep(3000)]);
+        if (!alive || my !== rid) return;
+        await sleep(300);
       }
       if (!alive || my !== rid) return;
       R.solved = true;
-      await playStory(my);
-      if (!alive || my !== rid) return;
       if (R.orders.length > 1) await say1('Some pictures can swap. Other orders work too.', 1800);
       if (!alive || my !== rid) return;
       await sleep(500);

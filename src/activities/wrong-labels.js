@@ -36,7 +36,7 @@ export const ROUNDS = [
   { kinds: ['ap', 'pb', 'ab'], view: 'all' },
 ];
 // Pause after the "all tags right" cheer before the next round starts.
-const NEXT_ROUND_MS = 1600;
+const NEXT_ROUND_MS = 600;
 
 const FRUITS = [
   { a: '🍎', p: '🍐', b: '🍌', an: 'apples', pn: 'pears', bn: 'bananas', a1: 'An apple', p1: 'A pear', b1: 'A banana' },
@@ -320,11 +320,13 @@ export default {
       R.resolved = true;
       R.maybe.replaceChildren();
       R.cols.forEach((c) => c.btn.classList.remove('glow'));
+      // The new tags appear at once so the child is never locked out while the line plays;
+      // a drag during the line interrupts it, and then the instruction is not needed.
+      R.tray.classList.remove('off');
       await api.cheer(msg);
       if (!live(e)) return;
       await sleep(350);
-      if (!live(e)) return;
-      R.tray.classList.remove('off');
+      if (!live(e) || R.placed) return;
       api.prompt(
         R.mixed || R.labels.length < 3
           ? 'Now drag the new tags onto the right boxes.'

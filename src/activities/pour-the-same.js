@@ -18,6 +18,8 @@
  *   - Round 3 tilt angles are lowered until the flat water still fits (fitsAt), so nothing spills.
  *   - Round state is guarded by a token (tok / live(t)) so stale timers do nothing after a round
  *     change; destroy() cancels the animation frame.
+ *   - Speech (v1.6): cheers are awaited before the next line; every round stores its intro
+ *     promise in cur.intro so the Watch demo waits for it instead of guessing with sleeps.
  *   - No exported test hooks.
  */
 import { h, sleep, shuffle, rand, pick, sfx, COLORS, resumeRound } from '../lib/core.js';
@@ -350,8 +352,7 @@ export default {
           done = true;
           busy = true;
           Object.values(btns).forEach((x) => x.classList.remove('glow'));
-          api.cheer(pick(CHEERS));
-          await sleep(1200);
+          await api.cheer(pick(CHEERS));
           if (!live(t)) return;
           if (!ctx.checked()) {
             api.prompt(ctx.checkSay);
@@ -359,7 +360,7 @@ export default {
             if (!live(t)) return;
             await ctx.check();
             if (!live(t)) return;
-            await sleep(500);
+            await sleep(400);
           }
           api.prompt(ctx.result);
           busy = false;
@@ -377,7 +378,7 @@ export default {
           if (!ctx.checked()) {
             busy = true;
             api.nudge(ctx.hint1);
-            await sleep(1700);
+            await sleep(1200);
             if (!live(t)) return;
             await ctx.check();
             busy = false;
@@ -454,31 +455,31 @@ export default {
       B.back.classList.add('tap', 'nudgeme');
       B.back.addEventListener('click', doPour);
       acts.replaceChildren(btn('🫗 Pour', `Pour into the ${word} glass`, doPour));
-      api.prompt('Two glasses with the same juice.');
-      sleep(2300).then(() => {
-        if (live(t) && !poured) api.prompt(`Pour one into the ${word} glass.`);
+      cur.intro = api.prompt('Two glasses with the same juice.').then(async () => {
+        await sleep(400);
+        if (live(t) && !poured) await api.prompt(`Pour one into the ${word} glass.`);
       });
       cur.play = async () => {
-        await sleep(2300);
+        await cur.intro;
         if (!live(t)) return;
-        api.prompt(`Pour one into the ${word} glass.`);
-        await sleep(1500);
+        await sleep(600);
         if (!live(t)) return;
         poured = true;
         B.back.classList.remove('nudgeme');
         acts.replaceChildren();
         await pour(sc, B, C, 1);
         if (!live(t)) return;
-        api.prompt('Is it still the same juice?');
-        await sleep(2200);
+        await api.prompt('Is it still the same juice?');
+        if (!live(t)) return;
+        await sleep(500);
         if (!live(t)) return;
         api.prompt('Pour it back to check.');
-        await sleep(1200);
+        await sleep(800);
         if (!live(t)) return;
         await check();
         if (!live(t)) return;
-        api.prompt('The same line! The same juice.');
-        await sleep(3000);
+        await api.prompt('The same line! The same juice.');
+        await sleep(600);
       };
     }
 
@@ -538,18 +539,20 @@ export default {
           'btn',
         ),
       );
-      api.prompt('Which glass has more juice?');
+      cur.intro = api.prompt('Which glass has more juice?');
       cur.play = async () => {
-        await sleep(2400);
+        await cur.intro;
+        if (!live(t)) return;
+        await sleep(500);
         if (!live(t)) return;
         api.prompt('Pour them into twin glasses.');
-        await sleep(1600);
+        await sleep(1000);
         if (!live(t)) return;
         await check();
         if (!live(t)) return;
-        api.prompt(RES[mode]);
         btns[mode].classList.add('glow');
-        await sleep(3200);
+        await api.prompt(RES[mode]);
+        await sleep(600);
       };
     }
 
@@ -679,7 +682,7 @@ export default {
           'btn',
         );
         acts.replaceChildren(tipBtn);
-        api.prompt(Q.say);
+        cur.intro = api.prompt(Q.say);
         cur.q = { list, tipBtn };
       }
       async function on(o, b) {
@@ -690,8 +693,7 @@ export default {
           busy = true;
           b.classList.add('good');
           cur.q.list.forEach((x) => x.btn.classList.remove('glow'));
-          api.cheer(pick(CHEERS));
-          await sleep(900);
+          await api.cheer(pick(CHEERS));
           if (!live(t)) return;
           if (!tipped) await tip(true);
           if (!live(t)) return;
@@ -716,7 +718,7 @@ export default {
             api.nudge('Tip it and watch the top of the water.');
             if (!tipped) {
               busy = true;
-              await sleep(1500);
+              await sleep(1200);
               if (!live(t)) return;
               await tip(true);
               busy = false;
@@ -726,21 +728,24 @@ export default {
       }
       startQ();
       cur.play = async () => {
-        await sleep(1800);
+        await cur.intro;
+        if (!live(t)) return;
+        await sleep(500);
         if (!live(t)) return;
         api.prompt('Watch the water when it tips.');
         await sleep(900);
         if (!live(t)) return;
         await tip(true);
         if (!live(t)) return;
-        api.prompt('The top of the water stays flat.');
-        await sleep(2200);
+        await api.prompt('The top of the water stays flat.');
+        if (!live(t)) return;
+        await sleep(400);
         if (!live(t)) return;
         const ok = cur.q.list.find((x) => x.ok).btn;
         ok.classList.add('glow', 'hop');
-        api.prompt('This picture is the flat one.');
         sfx('pop');
-        await sleep(3000);
+        await api.prompt('This picture is the flat one.');
+        await sleep(600);
       };
     }
 
@@ -808,18 +813,20 @@ export default {
           'btn',
         ),
       );
-      api.prompt(ask0);
+      cur.intro = api.prompt(ask0);
       cur.play = async () => {
-        await sleep(2600);
+        await cur.intro;
+        if (!live(t)) return;
+        await sleep(500);
         if (!live(t)) return;
         api.prompt('Pour them into twin glasses.');
-        await sleep(1600);
+        await sleep(1000);
         if (!live(t)) return;
         await check();
         if (!live(t)) return;
-        api.prompt(RES[ans]);
         btns[ans].classList.add('glow');
-        await sleep(3200);
+        await api.prompt(RES[ans]);
+        await sleep(600);
       };
     }
 
@@ -881,8 +888,7 @@ export default {
           busy = true;
           o.btn.classList.add('good');
           list.forEach((x) => x.btn.classList.remove('glow'));
-          api.cheer(pick(CHEERS));
-          await sleep(1200);
+          await api.cheer(pick(CHEERS));
           if (!live(t)) return;
           if (!poured) {
             api.prompt('Let us pour and see.');
@@ -890,7 +896,7 @@ export default {
             if (!live(t)) return;
             await doPour();
             if (!live(t)) return;
-            await sleep(500);
+            await sleep(400);
           }
           api.prompt('Thin glasses make the juice climb high.');
           busy = false;
@@ -908,7 +914,7 @@ export default {
           if (!poured) {
             busy = true;
             api.nudge('Hmm. Let us pour and watch.');
-            await sleep(1700);
+            await sleep(1200);
             if (!live(t)) return;
             await doPour();
             busy = false;
@@ -930,20 +936,22 @@ export default {
           'btn',
         ),
       );
-      api.prompt('Both go in the tall glass. How high?');
+      cur.intro = api.prompt('Both go in the tall glass. How high?');
       cur.play = async () => {
-        await sleep(2500);
+        await cur.intro;
+        if (!live(t)) return;
+        await sleep(500);
         if (!live(t)) return;
         api.prompt('Pour both into the tall glass.');
-        await sleep(1500);
+        await sleep(1000);
         if (!live(t)) return;
         await doPour();
         if (!live(t)) return;
         const ok = list.find((x) => x.ok).btn;
-        api.prompt('This picture matches the tall glass.');
         ok.classList.add('glow', 'hop');
         sfx('pop');
-        await sleep(3200);
+        await api.prompt('This picture matches the tall glass.');
+        await sleep(600);
       };
     }
 

@@ -401,7 +401,7 @@ export default {
       );
       sfx('tick');
       syncBadge(room, true);
-      if (speak) api.say(String(cell.n));
+      return speak ? api.say(String(cell.n)) : Promise.resolve();
     }
     function clearRoom(room) {
       room.cells.forEach((c) => {
@@ -420,9 +420,12 @@ export default {
         m.style.animation = '';
         return;
       }
-      markCell(room, cell, true);
-      if (room.count === room.cells.length) api.say(`${room.count} squares`);
+      // The last square is announced as "n squares" (not "n" and then "n squares", which would cut the number).
+      const last = room.count + 1 === room.cells.length;
+      markCell(room, cell, !last);
+      if (last) api.say(`${room.count} squares`);
     }
+    // Counts the remaining squares one by one. When speaking, each number is allowed to finish before the next.
     async function autoCount(room, { delay = 150, speak = false, t = tok } = {}) {
       room.counting = true;
       const todo = room.cells.filter((c) => !c.n).sort((a, b) => a.r - b.r || a.c - b.c);
@@ -431,8 +434,8 @@ export default {
           room.counting = false;
           return false;
         }
-        if (!c.n) markCell(room, c, speak);
-        await sleep(delay);
+        const said = c.n ? Promise.resolve() : markCell(room, c, speak);
+        await Promise.all([sleep(delay), speak ? Promise.race([said, sleep(1500)]) : null]);
       }
       room.counting = false;
       return live(t);
@@ -444,7 +447,9 @@ export default {
         return;
       }
       unglow();
-      autoCount(room, { delay: 260, speak: true });
+      autoCount(room, { delay: 200, speak: true }).then((done) => {
+        if (done && !busy && room.count === room.cells.length) api.say(`${room.count} squares`);
+      });
     }
 
     // ---------- layout ----------
@@ -470,7 +475,8 @@ export default {
     window.addEventListener('resize', onResize);
 
     // ---------- rounds ----------
-    function startRound(i, keep) {
+    // keep = reuse the current puzzle (demo); quiet = no spoken prompt (the demo narrates instead).
+    function startRound(i, keep, quiet) {
       tok++;
       round = i;
       wrong = 0;
@@ -489,7 +495,7 @@ export default {
       nextBtn.textContent = i < ROUNDS - 1 ? 'Next ▶' : 'Finish ⭐';
       unglow();
       layout();
-      api.prompt(PROMPTS[i]);
+      if (!quiet) api.prompt(PROMPTS[i]);
     }
     function next() {
       sfx('tap');
@@ -544,9 +550,8 @@ export default {
         return;
       }
       busy = true;
-      await api.nudge('Let us count together.');
-      if (!live(t)) return;
-      await Promise.all(rooms.map((r) => autoCount(r, { delay: 200, t })));
+      // The line and the counting run together, so the child waits for the longer of the two only.
+      await Promise.all([api.nudge('Let us count together.'), ...rooms.map((r) => autoCount(r, { delay: 150, t }))]);
       if (!live(t)) return;
       busy = false;
       const [a, b] = rooms.map((r) => r.count);
@@ -588,7 +593,7 @@ export default {
     // ---------- watch demo ----------
     // Restart the current round on the same puzzle, narrate while counting both rooms, then reset it.
     api.setDemo(async () => {
-      startRound(round, true);
+      startRound(round, true, true);
       const t = tok;
       busy = true;
       const [x, y] = rooms;
@@ -605,12 +610,13 @@ export default {
         sameBtn.classList.add('glow');
         await narr(`Both have ${x.count}. They are the same!`, 400);
         if (!ok()) return;
-        busy = false;
         if (rooms.some((r) => r.spec.piece)) {
           await narr('Watch the piece slide into the gap.', 100);
           if (!ok()) return;
+          busy = false; // doSlide() refuses to run while busy; it locks the stage itself
           await doSlide();
           if (!ok()) return;
+          busy = true;
           await narr('Same squares, just in a new place!', 900);
         } else await narr('Different shapes, same squares!', 900);
       } else {

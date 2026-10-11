@@ -34,7 +34,7 @@ const STEP_MS = 430,
   TURN_MS = 380,
   MAX_CARDS = 12;
 const LOOP_GUARD = 60; // safety cap on steps taken by one "until wall" card
-const WIN_PAUSE_MS = 2200; // pause after a successful run before the next round
+const WIN_PAUSE_MS = 500; // pause after the cheer has been spoken, before the next round
 const INK = '#2b2d42';
 const chev = (y) =>
   `<polyline points="11,${y + 7} 20,${y} 29,${y + 7}" fill="none" stroke="${INK}" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/>`;
@@ -733,8 +733,10 @@ export default {
       }
       if (allOk) {
         fails = 0;
-        api.cheer(pick(CHEERS));
+        const cheer = pick(CHEERS);
         sfx('win');
+        // Let the cheer finish (capped) so the next round's prompt never cuts it.
+        await Promise.race([api.cheer(cheer), sleep(1500 + 90 * cheer.length)]);
         await sleep(WIN_PAUSE_MS);
         if (!alive || myRound !== round) return true;
         if (round >= ROUNDS - 1) {

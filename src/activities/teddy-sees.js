@@ -456,8 +456,10 @@ export default {
       opts = null;
     const live = (t) => alive && t === tok;
     const unglow = () => wrap.querySelectorAll('.glow').forEach((e) => e.classList.remove('glow'));
+    // Speak a line and let it finish (capped generously), then pause a little. Demo only.
+    const spoken = (p, text) => Promise.race([p, sleep(1500 + 90 * text.length)]);
     const narr = async (text, ms = 500) => {
-      await Promise.race([api.prompt(text), sleep(8000)]);
+      await spoken(api.prompt(text), text);
       await sleep(ms);
     };
     const cellEl = (x, y) => scene.cells.find((c) => +c.dataset.x === x && +c.dataset.y === y);
@@ -538,10 +540,12 @@ export default {
         side.append(mapBox);
         fillTray(pz.scene.map((t) => t.toy));
       }
+      // The prompt never blocks play; its promise is returned so the demo can wait for it before narrating.
       if (pz.kind === 'place') {
         fillTray([pz.clues[0].toy]);
-        api.prompt(clueText(pz.clues[0]));
-      } else api.prompt(PROMPTS[i]);
+        return api.prompt(clueText(pz.clues[0]));
+      }
+      return api.prompt(PROMPTS[i]);
     }
     const clueText = (c) => `Put the ${TOYS[c.toy].name} ${REL[c.rel].words} the ${TOYS[c.anchor].name}.`;
 
@@ -642,7 +646,7 @@ export default {
       pz.clues[1] = nextClue(onTable, pz.clues[0]);
       tray.replaceChildren(makeTrayToy('hat'));
       const text = clueText(pz.clues[1]);
-      if (speak) api.cheer(`Yes! Now: ${text}`);
+      if (speak) api.cheer(`Yes! ${text}`);
       return text;
     }
     // Round 5: all toys follow the map; now pick Teddy's view.
@@ -658,9 +662,13 @@ export default {
 
     // ---------- watch demo ----------
     api.setDemo(async () => {
-      startRound(round, true);
+      const intro = startRound(round, true);
       const t = tok,
         ok = () => live(t);
+      // Let the round's own prompt finish before the demo starts talking.
+      await spoken(intro, PROMPTS[round] || clueText(pz.clues[0]));
+      await sleep(300);
+      if (!ok()) return;
       const fly = async (toy, c) => {
         const b = tray.querySelector(`.toy[data-toy="${toy}"]`);
         await flyTo(b, cellEl(c.x, c.y), { duration: 700 });
@@ -680,7 +688,7 @@ export default {
       else if (pz.kind === 'place') {
         for (let s = 0; s < 2 && ok(); s++) {
           const clue = pz.clues[s];
-          await narr(clueText(clue), 200);
+          if (s === 1) await narr(clueText(clue), 200); // clue 1 was spoken when the round started
           if (!ok()) return;
           await narr(REL[clue.rel].hint, 200);
           if (!ok()) return;

@@ -253,7 +253,11 @@ export default {
     let roundIdx = startAt;
     const waiters = []; // resolved once per animation frame with dt (seconds)
     const frame = () => new Promise((r) => waiters.push(r));
-    const talk = (p, max = 3500) => Promise.race([p, sleep(max)]);
+    // wait for a spoken line (generously capped; the speech promise always resolves anyway)
+    const talk = (p, max = 6000) => Promise.race([p, sleep(max)]);
+    // the game's own last prompt, so Watch does not start talking over it
+    let speaking = Promise.resolve();
+    const prompt = (text) => (speaking = api.prompt(text));
     const band = { k: 0, tw: 0, cu: 0, trail: null, paint: null, paintCol: pick(PAINTS), stepCol: pick(STEPS) };
     const tband = { k: 0, tw: 1, cu: 1 };
 
@@ -416,9 +420,11 @@ export default {
           res,
           demo: async () => {
             const b = btns.find((x) => x._v === cfg.answer) || btns[0];
-            if (cfg.say) api.say(cfg.say);
             b.classList.add('glow');
-            await sleep(1300);
+            await talk(speaking); // let the question finish first
+            if (!alive || !pending || pending.res !== res) return;
+            if (cfg.say) await talk(api.say(cfg.say));
+            await sleep(cfg.say ? 400 : 1300);
             if (alive) b.click();
           },
         };
@@ -429,12 +435,12 @@ export default {
     async function askUntil(opts, answer, question, hints) {
       let miss = 0;
       for (;;) {
-        api.prompt(question);
+        prompt(question);
         const v = await ask(opts, { answer, glow: miss >= 2 ? answer : null, say: hints[1] });
         if (!alive || v === answer) return;
         miss++;
         await talk(api.nudge(hints[0]));
-        await sleep(700);
+        await sleep(400);
         if (!alive) return;
       }
     }
@@ -477,7 +483,7 @@ export default {
         baseA = 0;
         tband.k = k;
         thumbOn = true;
-        api.prompt(j === 0 ? 'Make a band like this one. Twist or no twist?' : 'Now make the other band!');
+        prompt(j === 0 ? 'Make a band like this one. Twist or no twist?' : 'Now make the other band!');
         let miss = 0;
         for (;;) {
           const v = await ask(
@@ -507,7 +513,7 @@ export default {
           if (!alive) return;
           await unbuild();
           if (!alive) return;
-          api.prompt('Look at the picture again. Twist or no twist?');
+          prompt('Look at the picture again. Twist or no twist?');
         }
       }
       thumbOn = false;
@@ -533,33 +539,33 @@ export default {
       turnBtn.hidden = false;
       ant = { u: Math.PI, s: 0, trav: 0 }; // starts on the yellow face, at the back of the band
       await talk(
-        api.prompt(k ? 'Now the twisty band. The ant walks on yellow.' : 'Here is the ring. The ant walks on yellow.'),
+        prompt(k ? 'Now the twisty band. The ant walks on yellow.' : 'Here is the ring. The ant walks on yellow.'),
       );
       if (!alive) return;
-      api.prompt('Will its footprints reach the other side, the blue side?');
+      prompt('Will its footprints reach the other side, the blue side?');
       const guess = await ask([YES, NO], {
         answer: k ? 'yes' : 'no',
         say: k ? 'I think yes. Let us see.' : 'I think no. Let us see.',
       });
       if (!alive) return;
-      api.prompt(guess === 'yes' ? 'You think yes. Let us watch!' : 'You think no. Let us watch!');
+      prompt(guess === 'yes' ? 'You think yes. Let us watch!' : 'You think no. Let us watch!');
       await ask([{ v: 'go', kids: [h('span', {}, '🐜'), h('span', {}, 'Walk!')] }], { answer: 'go' });
       if (!alive) return;
       ctl.replaceChildren();
       lap.textContent = 'Lap 1';
-      api.prompt('Walk, little ant, walk!');
+      prompt('Walk, little ant, walk!');
       await walkLap();
       if (!alive) return;
       await reveal(ant);
       if (!alive) return;
-      api.prompt(k ? 'Back at the start... but on the blue side!' : 'Back at the start. Still on yellow.');
+      prompt(k ? 'Back at the start... but on the blue side!' : 'Back at the start. Still on yellow.');
       await ask([{ v: 'go', kids: [h('span', {}, '🐜'), h('span', {}, 'Keep walking')] }], { answer: 'go' });
       if (!alive) return;
       ctl.replaceChildren();
       lap.textContent = 'Lap 2';
       await walkLap();
       if (!alive) return;
-      api.prompt('Two laps! Let us turn the band and look.');
+      prompt('Two laps! Let us turn the band and look.');
       await turn(TAU, 3600);
       if (!alive) return;
       const ans = k ? 'yes' : 'no';
@@ -603,6 +609,7 @@ export default {
           goal,
           res,
           demo: async () => {
+            await talk(speaking);
             api.say(brush && brush.cut ? 'Snip, snip, along the line.' : 'Round and round we paint.');
             while (alive && pending && pending.res === res) brushMove((await frame()) * 2);
           },
@@ -644,7 +651,7 @@ export default {
         follow = true; // yellow inside, at the back
         ctl.replaceChildren();
         lap.textContent = 'Drag to paint';
-        api.prompt(k ? 'Now paint the inside of the twisty band!' : 'Paint the yellow inside of the ring. Drag along!');
+        prompt(k ? 'Now paint the inside of the twisty band!' : 'Paint the yellow inside of the ring. Drag along!');
         await paintUntil(TAU);
         if (!alive) return;
         if (!k) {
@@ -652,13 +659,13 @@ export default {
           lap.textContent = '';
           await talk(api.cheer('The whole inside is painted!'));
           if (!alive) return;
-          api.prompt('Is the blue outside painted? Let us turn and see.');
+          prompt('Is the blue outside painted? Let us turn and see.');
           await turn(TAU, 3400);
           if (!alive) return;
           await talk(api.cheer('No paint outside. The ring has two sides!'));
-          await sleep(800);
+          await sleep(600);
         } else {
-          api.prompt('Back at the start... but now on blue! Keep painting!');
+          prompt('Back at the start... but now on blue! Keep painting!');
           await paintUntil(2 * TAU);
           if (!alive) return;
           follow = false;
@@ -741,35 +748,36 @@ export default {
       ctl.replaceChildren();
       band.cut = [new Float32Array(N), new Float32Array(N)];
       band.cutV = v;
-      await talk(api.prompt(o.intro));
+      await talk(prompt(o.intro));
       if (!alive) return;
-      api.prompt(o.guessQ);
+      prompt(o.guessQ);
       const g = await ask(PIECES, {
         answer: o.ans,
         say: o.ans === 1 ? 'I think one piece. Let us see.' : 'I think two pieces. Let us see.',
       });
       if (!alive) return;
-      api.prompt(g === 1 ? 'You think one piece. Let us cut!' : 'You think two pieces. Let us cut!');
-      await sleep(1200);
-      if (!alive) return;
       brush = { u: Math.PI, s: 0, trav: 0, a0: 0, cut: true };
       follow = true;
       ctl.replaceChildren();
       lap.textContent = o.laps > 1 ? '✂️ Lap 1' : 'Drag to cut';
-      api.prompt(o.cutQ);
-      await paintUntil(TAU);
+      // cutting is open at once; the "Drag along" line follows only if she has not started yet
+      const cut1 = paintUntil(TAU);
+      await talk(prompt(g === 1 ? 'You think one piece. Let us cut!' : 'You think two pieces. Let us cut!'));
+      if (!alive) return;
+      if (brush.trav < 0.2) prompt(o.cutQ);
+      await cut1;
       if (!alive) return;
       if (o.laps > 1) {
-        await talk(api.prompt('Back at the start, but the cut did not meet!'));
+        await talk(prompt('Back at the start, but the cut did not meet!'));
         if (!alive) return;
-        api.prompt('Keep cutting, one more time round!');
+        prompt('Keep cutting, one more time round!');
         await paintUntil(2 * TAU);
         if (!alive) return;
       }
       follow = false;
       lap.textContent = '';
       brush = null;
-      api.prompt('The cut meets itself. Snip! Let us pull it open.');
+      prompt('The cut meets itself. Snip! Let us pull it open.');
       sfx('pop');
       flashT = T;
       await sleep(500);

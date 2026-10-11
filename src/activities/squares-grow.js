@@ -96,6 +96,8 @@ export default {
       p.catch((e) => {
         if (e !== CANCEL) console.error(e);
       });
+    // Wait for a spoken line AND at least ms (voice off resolves at once, so the floor keeps the animation paced).
+    const pace = (R, p, ms) => Promise.all([until(R, p), wait(R, ms)]);
 
     // ---- board ----
     const part = (n, l) => h('span', { class: 'part', style: { background: LAYER[l - 1] } }, String(n));
@@ -158,6 +160,7 @@ export default {
         chips: null,
         full: null,
         resolve: null,
+        lastSay: Promise.resolve(),
       };
       for (let k = 1; k <= size; k++) {
         for (const [r, c] of cellsOf(k)) {
@@ -197,17 +200,18 @@ export default {
       g.textContent = B.cnt;
       g.classList.add('counted');
       sfx('tick');
-      say(String(B.cnt));
+      return say(String(B.cnt));
     }
+    // Counts the dashed squares aloud, one at a time: each number is allowed to finish before the next.
     async function autoCount(R, delay = 0) {
       B.lock = true;
       if (delay) await wait(R, delay);
       for (const g of B.ghosts) {
         if (g.dataset.cnt || !g.classList.contains('ghost')) continue;
-        await wait(R, 420);
-        countGhost(R, g, true);
+        await wait(R, 120);
+        await pace(R, countGhost(R, g, true), 420);
       }
-      await wait(R, 300);
+      await wait(R, 200);
       B.lock = false;
     }
     function fillGhost(g) {
@@ -221,14 +225,16 @@ export default {
       if (B.placed === B.need) B.parts.push(B.need);
       setHud();
       sfx('pop');
-      say(String(B.total));
+      B.lastSay = say(String(B.total));
       if (B.placed === B.need) B.resolve();
+      return B.lastSay;
     }
+    // Fills the dashed L tile by tile, counting aloud; each number finishes before the next tile lands.
     async function autoFill(R) {
       for (const g of B.ghosts) {
         if (!g.classList.contains('ghost')) continue;
-        await wait(R, 340);
-        fillGhost(g);
+        await wait(R, 120);
+        await pace(R, fillGhost(g), 340);
       }
     }
     // Highlights each row in turn to show m rows of m.
@@ -329,10 +335,11 @@ export default {
         for (const t of tiles) {
           await wait(R, 160);
           await send(R, t, nextGhost(), true);
-          await wait(R, 260);
+          await pace(R, B.lastSay, 260); // let the number finish before the next tile flies
         }
       }
       await until(R, B.full);
+      await until(R, B.lastSay); // the last tile's number, before the cheer
       B.zone.replaceChildren();
     }
 
@@ -398,6 +405,14 @@ export default {
       if (g) g.classList.add('glow');
     };
 
+    // Cheer, then hand over the tray: the child may drag while the line plays (a tap may interrupt it),
+    // but the demo's own drags wait for it to finish.
+    async function goBuild(R, demo, text) {
+      const c = api.cheer(text);
+      if (demo) await pace(R, c, 600);
+      else await wait(R, 400);
+    }
+
     // ---- the five rounds ----
     async function round1(R, demo) {
       api.stage(0, TOTAL);
@@ -408,8 +423,7 @@ export default {
         );
         if (demo) await until(R, p);
         await buildLayer(R, k, demo);
-        await until(R, api.cheer(`${pick(PRAISE)} A ${k} by ${k} square: ${k * k} tiles.`));
-        await sweep(R, k);
+        await Promise.all([until(R, api.cheer(`${pick(PRAISE)} A ${k} by ${k} square: ${k * k} tiles.`)), sweep(R, k)]);
       }
     }
 
@@ -446,9 +460,9 @@ export default {
         B.zone.replaceChildren();
         B.counting = false;
         await autoFill(R);
-        await until(R, api.cheer(`${pick(PRAISE)} ${n} tiles. Now there are ${m * m}.`));
-        if (q === 1) await sweep(R, m);
-        else await wait(R, 700);
+        const c = api.cheer(`${pick(PRAISE)} ${n} tiles. Now there are ${m * m}.`);
+        if (q === 1) await Promise.all([until(R, c), sweep(R, m)]);
+        else await pace(R, c, 500);
       }
     }
 
@@ -494,12 +508,11 @@ export default {
           await demoPick(R, total ? m * m : n);
         }
         await until(R, answered);
-        api.cheer(pick(['Good thinking! Let us build it.', 'Yes! Now we build to check.']));
-        await wait(R, 900);
+        await goBuild(R, demo, pick(['Good thinking! Let us build it.', 'Yes! Now we build to check.']));
         await buildLayer(R, m, demo);
-        await until(R, api.cheer(total ? `${m * m} tiles! Your guess was right.` : `${n} tiles! ${m * m} in all.`));
-        if (k === 4) await sweep(R, 5);
-        else await wait(R, 800);
+        const c = api.cheer(total ? `${m * m} tiles! Your guess was right.` : `${n} tiles! ${m * m} in all.`);
+        if (k === 4) await Promise.all([until(R, c), sweep(R, 5)]);
+        else await pace(R, c, 500);
       }
     }
     // Round 4: the question is turned round. "We have 9, we want 16: how many more?"
@@ -535,12 +548,11 @@ export default {
         }
         await until(R, answered);
         B.ghosts.forEach((g) => g.classList.remove('glow'));
-        api.cheer(pick(['Good thinking! Let us build it.', 'Yes! Now we build to check.']));
-        await wait(R, 900);
+        await goBuild(R, demo, pick(['Good thinking! Let us build it.', 'Yes! Now we build to check.']));
         await buildLayer(R, m, demo);
-        await until(R, api.cheer(`${n} more tiles! Now ${m * m} in all.`));
-        if (q === 1) await sweep(R, m);
-        else await wait(R, 700);
+        const c = api.cheer(`${n} more tiles! Now ${m * m} in all.`);
+        if (q === 1) await Promise.all([until(R, c), sweep(R, m)]);
+        else await pace(R, c, 500);
       }
     }
 
@@ -572,13 +584,11 @@ export default {
         await demoPick(R, 12);
       }
       await until(R, a1);
-      api.cheer('Good thinking! Build the first L.');
-      await wait(R, 900);
+      await goBuild(R, demo, 'Good thinking! Build the first L.');
       await buildLayer(R, 3, demo);
-      await until(R, api.cheer('5 tiles. Now build the next L.'));
+      await goBuild(R, demo, '5 tiles. Now build the next L.');
       await buildLayer(R, 4, demo);
-      await until(R, api.cheer(`${pick(PRAISE)} 12 tiles. Now 16 in all.`));
-      await wait(R, 500);
+      await pace(R, api.cheer(`${pick(PRAISE)} 12 tiles. Now 16 in all.`), 500);
       const p2 = api.prompt('How many tiles will a 5 by 5 square have?');
       const a2 = ask(R, {
         options: shuffle([25, 24, 20, pick([23, 26])]),
@@ -598,11 +608,9 @@ export default {
         await demoPick(R, 25);
       }
       await until(R, a2);
-      api.cheer('Yes! Now we build to check.');
-      await wait(R, 900);
+      await goBuild(R, demo, 'Yes! Now we build to check.');
       await buildLayer(R, 5, demo);
-      await until(R, api.cheer('25 tiles! Your guess was right.'));
-      await sweep(R, 5);
+      await Promise.all([until(R, api.cheer('25 tiles! Your guess was right.')), sweep(R, 5)]);
     }
     const rounds = [round1, round2, round3, round4, round5];
 

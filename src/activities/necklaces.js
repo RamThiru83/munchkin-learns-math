@@ -167,8 +167,17 @@ export default {
       }, ms);
       timers.add(t);
     };
-    // speak/show a line, but never wait longer than the line needs (speech may be missing or off)
-    const talk = (text, fn = api.prompt) => Promise.race([fn(text), sleep(900 + text.length * 60)]);
+    // speak/show a line and wait for the voice to finish it, capped (speech may be missing or off)
+    const talk = (text, fn = api.prompt) =>
+      Promise.all([Promise.race([fn(text), sleep(1500 + text.length * 90)]), sleep(500 + text.length * 45)]);
+    let lastCheer = '';
+    const nextCheer = () => {
+      let c;
+      do c = pick(CHEERS);
+      while (c === lastCheer);
+      lastCheer = c;
+      return c;
+    };
 
     api.css(CSS);
     const wrap = h('div', { class: 'a-necklaces' });
@@ -364,12 +373,13 @@ export default {
           // a mirror twin: show it by flipping the necklace over
           wrongRow++;
           busy = true;
-          api.nudge(
+          const said = api.nudge(
             wrongRow >= 2
               ? 'Flipped, it is the same! Try the shining spots.'
               : 'Flip it over. It is the same as this one!',
           );
-          await flipBench();
+          // the demo lets the line finish before it goes on; the child may tap again straight after the flip
+          await Promise.all([flipBench(), fromDemo ? Promise.race([said, sleep(5000)]) : null]);
           if (!alive || t !== token) return;
           if (wrongRow >= 2) showTip();
           if (!fromDemo) busy = false;
@@ -403,7 +413,7 @@ export default {
       }
       if (!fromDemo) {
         busy = false;
-        api.cheer(justRevealed ? `Great! There are ${word(all.length)} different ones. Find them all!` : pick(CHEERS));
+        api.cheer(justRevealed ? `Great! There are ${word(all.length)} different ones. Find them all!` : nextCheer());
       }
     }
 
@@ -412,12 +422,16 @@ export default {
       busy = true;
       btnClear.hidden = btnAdd.hidden = btnHint.hidden = btnFlip.hidden = true;
       const last = round === ROUNDS.length - 1;
-      api.cheer(
-        last
-          ? `All ${word(all.length)}! You are a super necklace maker!`
-          : `You found all ${word(all.length)}! Every single one!`,
-      );
-      await sleep(1100);
+      // the cheer finishes before the shelf is lined up and the next line is spoken
+      await Promise.all([
+        talk(
+          last
+            ? `All ${word(all.length)}! You are a super necklace maker!`
+            : `You found all ${word(all.length)}! Every single one!`,
+          api.cheer,
+        ),
+        sleep(1100),
+      ]);
       if (!alive || t !== token) return;
       // line them up in the plan's order: no gaps, no repeats
       found = all.slice();
@@ -431,7 +445,7 @@ export default {
         }, i * 110),
       );
       if (fromDemo) return;
-      await sleep(900 + all.length * 110);
+      await sleep(500 + all.length * 110); // the shelf hops, then the next line
       if (!alive || t !== token) return;
       btnNext.textContent = last ? 'All done! 🎉' : 'Next necklaces ➜';
       btnNext.hidden = false;
@@ -450,7 +464,8 @@ export default {
       hintCard.replaceChildren(h('span', { 'aria-hidden': 'true' }, '💡'), ghost, label);
       hintCard.hidden = false;
       hintCard.scrollIntoView({ block: 'nearest' });
-      await talk(
+      // the plan is spoken while the hint card steps through it
+      const plan = talk(
         R.k == null
           ? 'A plan: no blue, then one blue, then two, then three.'
           : R.flip
@@ -459,7 +474,6 @@ export default {
               ? 'A plan: blue at the start, then slide it along.'
               : 'A plan: keep one blue still, slide the other along.',
       );
-      if (!alive || t !== token) return;
       for (const p of all) {
         [...ghost.querySelectorAll('i')].forEach((el, i) => el.classList.toggle('b', p[i] === 'B'));
         sfx('tick');
@@ -475,6 +489,8 @@ export default {
         } else {
           label.textContent = 'Not on the shelf yet!';
           ghost.classList.add('glow');
+          await plan; // do not talk over the plan line
+          if (!alive || t !== token) return;
           api.prompt('This one is missing. Can you make it?');
           break;
         }
@@ -603,14 +619,14 @@ export default {
             // show the twin rule once: the mirror copy is the same necklace
             await talk('Is the flipped one new? Let us see.');
             if (!ok() || !(await makeAndAdd(rev(p)))) return;
-            await sleep(900);
+            await sleep(400);
             if (!ok()) return;
             await talk('Same necklace! So it does not count.');
             if (!ok()) return;
           }
         }
         hand.style.opacity = '0';
-        await sleep(1600 + all.length * 110);
+        await sleep(800 + all.length * 110); // the shelf hops into order
         if (!ok()) return;
         startRound(round, true);
         api.prompt('Your turn! Can you find them all?');

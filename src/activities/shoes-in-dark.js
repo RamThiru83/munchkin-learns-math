@@ -182,9 +182,19 @@ export default {
       void el.getBoundingClientRect();
       el.classList.add(c);
     };
+    // The line being spoken now, so the game's own next line can wait for it instead of cutting it off.
+    let last = { p: Promise.resolve(), t: '' };
+    const speak = (kind, t) => (last = { p: api[kind](t), t }).p;
+    const lastDone = async () => {
+      let l;
+      do {
+        l = last;
+        await Promise.race([l.p, sleep(1500 + l.t.length * 90)]);
+      } while (l !== last); // a newer line started meanwhile: wait for that one too
+    };
     // Speak/show a line, then wait long enough to read it (longer when voice is off). False if superseded.
     const tell = async (e, t, ms = 500) => {
-      await api.prompt(t);
+      await speak('prompt', t);
       if (!live(e)) return false;
       await sleep(ms + (settings.voice ? 0 : 700 + t.length * 22));
       return live(e);
@@ -196,7 +206,8 @@ export default {
 
     // Spoken summary of the unluckiest grabs so far (all different colours, or one side only per colour).
     function noPairMsg() {
-      if (!R.shoes) return `${R.shelf.map((x) => cap(x.c)).join(', ')}. All different! No pair yet.`;
+      // One colour per sentence, so every colour is one short recorded clip (no list to record per ordering).
+      if (!R.shoes) return `${R.shelf.map((x) => cap(x.c) + '.').join(' ')} All different! No pair yet.`;
       return (
         R.cols
           .map((c) => {
@@ -272,7 +283,7 @@ export default {
       const hist = h('div', { class: 'hist', 'aria-live': 'polite' });
       wrap.append(capEl, scene, shelf, ctl, hist);
       R.ui = { scene, hand, held: hand.querySelector('.held'), tapme, slots, ctl, hist, chips: {} };
-      api.prompt(INTRO[ri]);
+      speak('prompt', INTRO[ri]);
       return e;
     }
 
@@ -283,7 +294,9 @@ export default {
     }
 
     // One grab: the hand dips into the dark sack, rummages, comes out holding the item, which hops onto the shelf.
-    async function grabInto(e, item) {
+    // `onShow` runs the moment the item appears in the hand (the unluckiest-way replay names it then, while
+    // it hops onto the shelf, instead of after).
+    async function grabInto(e, item, onShow) {
       const U = R.ui;
       U.tapme.hidden = true;
       U.scene.classList.remove('pulse');
@@ -302,6 +315,7 @@ export default {
       U.hand.classList.add('fist');
       U.held.replaceChildren(pic(item));
       U.scene.classList.remove('rum');
+      if (onShow) onShow();
       await sleep(100);
       if (!live(e)) return false;
       sfx('pop');
@@ -372,8 +386,9 @@ export default {
       if (!(await grabInto(e, item))) return;
       const mate = R.shelf.slice(0, -1).find((x) => R.match(x, item));
       if (!mate) {
-        api.prompt(`${cap(desc(item))}. No pair yet. Grab again!`);
-        R.busy = false;
+        R.busy = false; // the sack can be tapped again at once
+        await lastDone(); // a quick tap must not make this line cut off the previous one
+        if (live(e) && !R.pairFound) speak('prompt', `${cap(desc(item))}. No pair yet. Grab again!`);
         return;
       }
       markPair(item);
@@ -382,8 +397,9 @@ export default {
       R.tries.push(n);
       renderHist();
       showTryButtons();
-      api.cheer(n === 2 ? 'Lucky! A pair in 2 grabs!' : `A pair after ${n} grabs!`);
       R.busy = false;
+      await lastDone();
+      if (live(e) && R.pairFound) speak('cheer', n === 2 ? 'Lucky! A pair in 2 grabs!' : `A pair after ${n} grabs!`);
     }
 
     function showTryButtons() {
@@ -400,7 +416,7 @@ export default {
             if (!(await returnItems(e))) return;
             R.ui.ctl.replaceChildren();
             R.busy = false;
-            api.prompt('Grab again!');
+            speak('prompt', 'Grab again!');
           },
         },
         '🔁 Again',
@@ -418,6 +434,8 @@ export default {
             if (!(await returnItems(e))) return;
             showAsk();
             R.busy = false;
+            await lastDone(); // let the pair cheer finish before asking
+            if (live(e) && R.phase === 'ask') speak('prompt', 'How many grabs, to be SURE of a pair?');
           },
         },
         '💡 Be SURE',
@@ -425,6 +443,7 @@ export default {
       R.ui.ctl.replaceChildren(again, sure);
     }
 
+    // Offer the answer chips (the question itself is spoken by the caller, when the line before has finished).
     function showAsk() {
       const U = R.ui;
       R.phase = 'ask';
@@ -456,7 +475,6 @@ export default {
         '🙈 Show me',
       );
       U.ctl.replaceChildren(chips, show);
-      api.prompt('How many grabs, to be SURE of a pair?');
     }
 
     // The unluckiest scenario: grabs that avoid any pair for as long as possible, then the next grab must match.
@@ -465,28 +483,32 @@ export default {
       if (R.shelf.length && !(await returnItems(e))) return false;
       if (!(await tell(e, intro, 300))) return false;
       for (const it of shuffle(R.worst)) {
-        if (!(await grabInto(e, it))) return false;
-        if (!(await tell(e, `${cap(desc(it))}.`, 120))) return false;
+        // Name the item as soon as it is in the hand; the line ends while it hops onto the shelf.
+        if (!(await grabInto(e, it, () => speak('prompt', `${cap(desc(it))}.`)))) return false;
+        await lastDone();
+        if (!live(e)) return false;
+        await sleep(settings.voice ? 120 : 500);
+        if (!live(e)) return false;
       }
       if (!(await tell(e, noPairMsg(), 500))) return false;
       if (!(await tell(e, nextMsg(), 400))) return false;
-      const last = pick(R.sack.filter((x) => R.shelf.some((y) => R.match(x, y))));
-      if (!(await grabInto(e, last))) return false;
-      markPair(last);
-      await api.cheer(`A pair! ${R.sure} grabs make sure.`);
+      const mate = pick(R.sack.filter((x) => R.shelf.some((y) => R.match(x, y))));
+      if (!(await grabInto(e, mate))) return false;
+      markPair(mate);
+      await speak('cheer', `A pair! ${R.sure} grabs make sure.`);
       if (!live(e)) return false;
-      await sleep(settings.voice ? 700 : 1500);
+      await sleep(settings.voice ? 600 : 1500);
       return live(e);
     }
 
     async function hintShow(e) {
       R.busy = true;
       R.glowed = true;
-      await api.nudge('Let me show you the unluckiest way.');
+      await speak('nudge', 'Let me show you the unluckiest way.');
       if (!live(e)) return;
       if (!(await runWorst(e, 'Unlucky on purpose!'))) return;
       R.ui.chips[R.sure].classList.add('glow');
-      api.prompt('Now tap the glowing number.');
+      speak('prompt', 'Now tap the glowing number.');
       R.busy = false;
     }
 
@@ -500,7 +522,7 @@ export default {
         btn.classList.remove('glow');
         btn.classList.add('ok');
         retrigger(btn, 'hop');
-        await api.cheer(`${pick(CHEERS)} ${n} grabs.`);
+        await speak('cheer', `${pick(CHEERS)} ${n} grabs.`);
         if (!live(e)) return;
         if (!(await runWorst(e, 'Here is the unluckiest way.'))) return;
         ri++;
@@ -511,14 +533,15 @@ export default {
       R.miss++;
       retrigger(btn, 'shake');
       if (R.glowed) {
-        api.nudge('Try the glowing number!');
+        speak('nudge', 'Try the glowing number!');
         return;
       }
       if (R.miss >= 2) {
         hintShow(e);
         return;
       }
-      api.nudge(
+      speak(
+        'nudge',
         n < 2
           ? 'One grab cannot make a pair.'
           : n < R.sure

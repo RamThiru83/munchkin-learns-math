@@ -126,7 +126,7 @@ function checkRound(r) {
 function seeText(card, ask) {
   const n = answerOf(card, 'total');
   if (ask === 'missing') return `${n} dots and ${10 - n} empty. ${n} and ${10 - n} make 10.`;
-  if (ask === 'empty') return `${n} dots and ${5 - n} empty make 5.`;
+  if (ask === 'empty') return `${n} ${n === 1 ? 'dot' : 'dots'} and ${5 - n} empty make 5.`;
   if (card.kind === 'ten')
     return n === 10 ? 'Two full rows of five make ten.' : `A full row is five, and ${n - 5} more makes ${n}.`;
   if (card.kind === 'five') return n === 1 ? 'Just one dot.' : `${n} dots in a row.`;
@@ -138,7 +138,8 @@ function seeText(card, ask) {
       4: 'Two and two make four.',
       5: 'Four corners and one in the middle: five.',
     }[n];
-  return n <= 3 ? `I see ${WORDS[n]} at once.` : `I see ${n > 4 ? 'three and two' : 'two and two'}: ${n}.`;
+  // Groups light up left pair first, then the rest, so the words follow the same order.
+  return n <= 3 ? `I see ${WORDS[n]} at once.` : `I see ${n > 4 ? 'two and three' : 'two and two'}: ${n}.`;
 }
 // The groups lit up, in order, by the demo and the stronger hint: arrays of pip / cell indexes.
 function groupsOf(card, ask) {
@@ -230,7 +231,13 @@ export default {
     const live = (t) => alive && t === tok;
     const card = () => R.cards[ci];
     const ask = () => card().asks[qi];
-    const say = (txt, ms = 400) => Promise.race([api.prompt(txt), sleep(700 + txt.length * 60)]).then(() => sleep(ms));
+    // Demo narration: wait for the recorded line to finish (the promise always resolves), then a short pause.
+    const say = (txt, ms = 400) => api.prompt(txt).then(() => sleep(ms));
+    let lastCheer = '';
+    const cheerWord = () => {
+      lastCheer = pick(CHEERS.filter((c) => c !== lastCheer));
+      return lastCheer;
+    };
     const unglow = () =>
       wrap.querySelectorAll('.glow,.sel,.lit,.lit2').forEach((e) => e.classList.remove('glow', 'sel', 'lit', 'lit2'));
     const chip = (n) => nums.querySelector(`[data-n="${n}"]`);
@@ -360,7 +367,7 @@ export default {
       setOpen(true);
       const gs = groupsOf(card(), ask());
       gs.forEach((_, g) => light(gs, g));
-      await Promise.race([api.cheer(`${pick(CHEERS)} ${seeText(card(), ask())}`), sleep(4500)]);
+      await api.cheer(`${cheerWord()} ${seeText(card(), ask())}`); // always resolves; the next prompt must not cut it
       await sleep(500);
       if (!live(t)) return;
       if (qi + 1 < card().asks.length) qi++;
@@ -396,7 +403,7 @@ export default {
       await say(seeText(c, a), 300);
       if (!live(t)) return;
       chip(answerOf(c, a)).classList.add('glow');
-      await say(`So I tap ${answerOf(c, a)}. Now you try!`, 900);
+      await say(`So I tap ${answerOf(c, a)}. Now you try!`, 600);
       if (!live(t)) return;
       startQuestion();
     });

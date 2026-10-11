@@ -259,10 +259,20 @@ export default {
     const P = (t) => api.prompt(t);
     const C = (t) => (demoRun ? Promise.resolve() : api.cheer(t));
     const N = (t) => api.nudge(t);
-    // show a line and give it time to be read/heard, but never wait too long
+    // show a line and wait for the voice to finish it (floor: time to read it when sound is off; cap: generous)
     const say = (text, fn = P) => {
-      const ms = 800 + text.length * 55;
-      return Promise.all([Promise.race([fn(text), sleep(ms + 4000)]), sleep(ms)]);
+      const ms = 500 + text.length * 45;
+      return Promise.all([Promise.race([fn(text), sleep(1500 + text.length * 90)]), sleep(ms)]);
+    };
+    // wait for a line the game started earlier (a prompt the child may answer meanwhile), used by the demo
+    const spoken = (p) => Promise.race([p || Promise.resolve(), sleep(5000)]);
+    let lastCheer = '';
+    const nextCheer = () => {
+      let c;
+      do c = pick(CHEERS);
+      while (c === lastCheer);
+      lastCheer = c;
+      return c;
     };
     const until = async (cond, t) => {
       while (live(t) && !cond()) await sleep(80);
@@ -503,7 +513,7 @@ export default {
       setTimeout(() => tok.classList.remove('hopx'), 550);
       S.remaining--;
       if (S.remaining > 0) {
-        if (!demoRun) C(pick(CHEERS));
+        if (!demoRun) C(nextCheer());
       } else S.sortRes();
     }
 
@@ -523,7 +533,7 @@ export default {
         k.classList.add('pickable');
       });
       S.pick = { mode, targets, left: targets.size, wrong: 0 };
-      P(
+      S.pick.spoken = P(
         {
           or: `Tap every block that is ${ruleIs(S.A)} or ${ruleIs(S.B)}.`,
           not: `Tap every block that is not ${ruleIs(S.A)}.`,
@@ -539,7 +549,7 @@ export default {
       if (!live(t)) return false;
       S.toks.forEach((k) => k.classList.remove('pickable', 'tip'));
       await say(pick(['You found them all!', 'Yes, that is every one!']), C);
-      await sleep(500);
+      await sleep(300);
       return live(t);
     }
     function onTok(tok) {
@@ -628,7 +638,7 @@ export default {
             }[mode],
           );
       }
-      P(
+      S.count.spoken = P(
         {
           both: 'How many blocks are in both ropes?',
           out: 'How many blocks are outside the ropes?',
@@ -644,8 +654,8 @@ export default {
       for (let k = 0; k < ab.length; k++) {
         ab[k].classList.add('hopx');
         sfx('tick');
-        api.say(String(k + 1));
-        await sleep(700);
+        // count aloud: each number clip finishes before the next hop
+        await Promise.all([Promise.race([api.say(String(k + 1)), sleep(1500)]), sleep(600)]);
         if (!live(t)) return false;
         ab[k].classList.remove('hopx');
       }
@@ -657,7 +667,7 @@ export default {
         }[mode],
         C,
       );
-      await sleep(600);
+      await sleep(300);
       return live(t);
     }
 
@@ -666,7 +676,7 @@ export default {
       S.i === 0
         ? 'Sort the blocks into the ropes. Others stay outside.'
         : S.i === 1
-          ? `Is it ${ruleIs(S.A)}? Is it ${ruleIs(S.B)}? Both goes in the middle!`
+          ? `Is it ${ruleIs(S.A)}? Is it ${ruleIs(S.B)}? If both, it goes in the middle!`
           : `${up1(ruleWord(S.A))}, ${ruleWord(S.B)}, both, or neither? Sort them all!`;
     async function flow(t) {
       await S.sortDone;
@@ -674,7 +684,7 @@ export default {
       S.wrongRun = 0;
       clearHint();
       if (S.i < 2) {
-        await say(S.i === 0 ? 'All sorted! Great ropes work.' : 'Everything is in the right place!', C);
+        await say(S.i === 0 ? 'All sorted! Great work.' : 'Everything is in the right place!', C);
         return live(t);
       }
       await say('All sorted! Now some questions.', C);
@@ -691,23 +701,23 @@ export default {
       setup(i, i === 1 && !noIntro && !demoRun);
       api.stage(i, TOTAL);
       if (S.intro) {
+        // the ropes slide while the line is spoken; the tray unlocks as soon as both are done
         S.tray.classList.add('locked');
-        await say('Look! The ropes slide together.');
-        if (!live(t)) return;
         sfx('whoosh');
         const sg = S;
-        await tween(1000, (p) => applyGeom(lerpG(sg.g0, sg.gEnd, p)));
+        await Promise.all([
+          say('Look! The ropes slide together.'),
+          tween(1000, (p) => applyGeom(lerpG(sg.g0, sg.gEnd, p))),
+        ]);
         if (!live(t)) return;
         S.g = S.gEnd;
         S.intro = false;
-        await sleep(300);
-        if (!live(t)) return;
         S.tray.classList.remove('locked');
       }
       P(sortLine());
       const ok = await flow(t);
       if (!ok || !live(t)) return;
-      await sleep(900);
+      await sleep(400);
       if (!live(t)) return;
       if (i < TOTAL - 1) runRound(i + 1);
       else api.finish();
@@ -745,7 +755,8 @@ export default {
         for (const [kind, mode] of QS[i] || []) {
           if (kind === 'pick') {
             if (!(await until(() => S.pick && S.pick.mode === mode, t))) return;
-            await sleep(1600);
+            await spoken(S.pick.spoken); // let the question finish before tapping
+            await sleep(500);
             for (const k of [...S.pick.targets]) {
               if (!live(t)) return;
               k.click();
@@ -753,7 +764,8 @@ export default {
             }
           } else {
             if (!(await until(() => S.count, t))) return;
-            await sleep(1400);
+            await spoken(S.count.spoken);
+            await sleep(500);
             if (!live(t)) return;
             S.count.btns[S.count.n - 1].click();
           }

@@ -193,8 +193,14 @@ export default {
       void el.offsetWidth;
       el.classList.add(cls);
     };
+    // Speak a line and remember its promise, so the game's own next line can wait for it (a child's tap may
+    // still interrupt). Capped generously in case a clip never reports its end.
+    const speak = (kind, txt) => {
+      st.saying = Promise.race([api[kind](txt), sleep(1500 + 90 * txt.length)]);
+      return st.saying;
+    };
     const narr = async (txt, ms = 300) => {
-      await Promise.race([api.prompt(txt), sleep(2600)]);
+      await speak('prompt', txt);
       await sleep(ms);
     };
 
@@ -278,15 +284,17 @@ export default {
       showHops();
       if (st.r.predict) {
         setPhase('predict');
-        api.prompt(
+        speak(
+          'prompt',
           st.pos
             ? `You rolled ${v}. You are on ${st.pos}. Where will you land?`
             : `You rolled ${v}. Where will you land?`,
         );
       } else {
         setPhase('hop');
-        if (st.left < v) api.prompt(`You rolled ${v}. Only ${st.left} more to ${st.r.n}!`);
-        else api.prompt(st.pos ? `You rolled ${v}. You are on ${st.pos}. Count on!` : `You rolled ${v}. Hop ${v}!`);
+        if (st.left < v) speak('prompt', `You rolled ${v}. Only ${st.left} more to ${st.r.n}!`);
+        else
+          speak('prompt', st.pos ? `You rolled ${v}. You are on ${st.pos}. Count on!` : `You rolled ${v}. Hop ${v}!`);
       }
     }
 
@@ -320,7 +328,7 @@ export default {
         unglow();
         el.classList.add('aim');
         setPhase('hop');
-        api.cheer(`Good thinking! Now hop to check.`);
+        speak('cheer', 'Good thinking! Now hop to check.');
         return;
       }
       st.miss += 1;
@@ -341,7 +349,7 @@ export default {
       st.left -= 1;
       put(st.me, n);
       sfx('tick');
-      api.say(String(n));
+      speak('say', String(n));
       showHops();
       if (st.left === 0) endTurn();
     }
@@ -350,15 +358,17 @@ export default {
       const t = tok;
       const r = st.r;
       setPhase('wait');
-      await sleep(450);
+      await st.saying; // let the last number finish before the cheer
+      await sleep(150);
       if (!live(t)) return;
       const aim = wrap.querySelector('.sq.aim');
       aim?.classList.remove('aim');
       if (st.pos === r.n)
         return r.ask ? ask() : won(pick([`You reached ${r.n}!`, `Hooray, ${r.n}! The end of the path!`]));
-      api.cheer(aim ? `Yes, ${st.pos}! Just as you said.` : `${pick(PRAISE)} You are on ${st.pos}.`);
+      speak('cheer', aim ? `Yes, ${st.pos}! Just as you said.` : `${pick(PRAISE)} You are on ${st.pos}.`);
       if (r.owl) {
-        await sleep(900);
+        await st.saying; // the owl waits for the cheer to end
+        await sleep(400);
         if (!live(t)) return;
         await owlTurn(t);
         if (!live(t)) return;
@@ -367,7 +377,7 @@ export default {
       if (r.ask && (st.turn >= r.turns || st.owlPos === r.n)) return ask();
       setPhase('roll');
       st.die.disabled = false;
-      if (r.owl) api.prompt('Your turn. Tap the die!');
+      if (r.owl) speak('prompt', 'Your turn. Tap the die!');
     }
 
     async function owlTurn(t) {
@@ -379,15 +389,15 @@ export default {
       const v = await spin(t, r.ask ? owlRollR2(st.owlPos, st.pos, st.turn) : pick(r.faces));
       if (!live(t)) return;
       const end = landing(st.owlPos, v, r.n);
-      api.prompt(st.owlPos ? `Owl rolled ${v}. Owl is on ${st.owlPos}…` : `Owl rolled ${v}.`);
-      await sleep(800);
+      await narr(st.owlPos ? `Owl rolled ${v}. Owl is on ${st.owlPos}.` : `Owl rolled ${v}.`, 250);
+      // One hop per number, each number spoken to the end (a spoken number takes about 0.7 s).
       for (let p = st.owlPos + 1; p <= end; p++) {
         if (!live(t)) return;
         st.owlPos = p;
         put(st.owl, p);
         sfx('tick');
-        api.say(String(p));
-        await sleep(600);
+        await speak('say', String(p));
+        await sleep(150);
       }
     }
 
@@ -395,7 +405,7 @@ export default {
       setPhase('ask');
       st.die.disabled = true;
       st.hops.replaceChildren();
-      api.prompt('Who is ahead? Which number is bigger?');
+      speak('prompt', 'Who is ahead? Which number is bigger?');
       const opts = shuffle([
         [ME, st.pos],
         [OWL, st.owlPos],
@@ -424,7 +434,7 @@ export default {
       if (n === hi) {
         unglow();
         setPhase('done');
-        api.cheer(`Yes! ${hi} is bigger than ${lo}. ${hi === st.pos ? 'You are' : 'Owl is'} ahead!`);
+        speak('cheer', `Yes! ${hi} is bigger than ${lo}. ${hi === st.pos ? 'You are' : 'Owl is'} ahead!`);
         showNext();
         return;
       }
@@ -440,7 +450,7 @@ export default {
     function won(text) {
       setPhase('done');
       st.die.disabled = true;
-      api.cheer(text);
+      speak('cheer', text);
       showNext();
     }
 
@@ -514,7 +524,7 @@ export default {
       st.goal.dataset.target = t;
       st.miss = 0;
       setPhase('place');
-      api.prompt(`Where does ${t} live? Drag the flag.`);
+      speak('prompt', `Where does ${t} live? Drag the flag.`);
     }
 
     async function place(v) {
@@ -531,22 +541,25 @@ export default {
         st.zone.hidden = true;
         st.helps.forEach((m) => (m.hidden = true));
         st.nl.append(h('div', { class: 'truth', style: { left: pct(goal) } }, h('span', {}, String(goal))));
-        api.cheer(v === goal ? `Spot on! ${goal} lives right here.` : `So close! ${goal} is right here.`);
-        await sleep(1500);
+        await speak('cheer', v === goal ? `Spot on! ${goal} lives right here.` : `So close! ${goal} is right here.`);
+        await sleep(300);
         if (!live(t)) return;
         pin.remove();
         st.idx += 1;
         if (st.idx < st.targets.length) nextTarget();
         else {
           setPhase('done');
-          api.cheer('All three numbers found their places!');
+          speak('cheer', 'All three numbers found their places!');
           showNext();
         }
         return;
       }
       st.miss += 1;
       pin.classList.add('try');
-      api.nudge(v > goal ? `A bit too far. ${goal} comes before ${v}.` : `Not far enough. ${goal} comes after ${v}.`);
+      speak(
+        'nudge',
+        v > goal ? `A bit too far. ${goal} comes before ${v}.` : `Not far enough. ${goal} comes after ${v}.`,
+      );
       if (st.miss >= 2) {
         // Stronger hint: show the halfway marks 5 and 15 and glow the right stretch of line.
         st.helps.forEach((m) => (m.hidden = false));
@@ -554,10 +567,9 @@ export default {
         st.zone.hidden = false;
         st.zone.classList.add('glow');
       }
+      setPhase('place'); // she may try again at once; the faded pin fades out on its own
       await sleep(900);
-      if (!live(t)) return;
-      pin.remove();
-      setPhase('place');
+      if (live(t)) pin.remove();
     }
 
     // ---------- rounds ----------
@@ -585,7 +597,7 @@ export default {
         if (st.owl) put(st.owl, 0);
         layout();
         setPhase('roll');
-        api.prompt(r.prompt);
+        speak('prompt', r.prompt);
       } else {
         Object.assign(st, buildLine(), { targets: pickTargets(), idx: 0 });
         nextTarget();
@@ -598,6 +610,8 @@ export default {
       const ok = () => live(t);
       while (ok()) {
         const p = st.phase;
+        await st.saying; // never talk over the game's own line
+        if (!ok() || st.phase !== p) continue;
         if (p === 'roll') {
           await narr('I tap the die.', 100);
           if (ok()) await myRoll();
@@ -608,20 +622,22 @@ export default {
             st.pos ? `I am on ${st.pos}. ${st.left} more is ${land}.` : `${st.left} from the start is ${land}.`,
           );
           if (ok()) predict(land, st.sq[land - 1]);
-          await sleep(500);
+          await st.saying;
+          await sleep(300);
         } else if (p === 'hop') {
           if (st.pos) await narr(`I am on ${st.pos}. I count on.`, 100);
           while (ok() && st.phase === 'hop') {
             tapSquare(st.pos + 1);
-            await sleep(650);
+            await st.saying; // each number is said to the end
+            await sleep(200);
           }
         } else if (p === 'ask') {
           const hi = Math.max(st.pos, st.owlPos);
           actions.querySelector(`[data-n="${hi}"]`)?.classList.add('glow');
-          await narr(`${hi} is further along the path. ${hi} is bigger!`, 1200);
+          await narr(`${hi} is further along the path. ${hi} is bigger!`, 600);
           return;
         } else if (p === 'done') {
-          await sleep(1500);
+          await sleep(600);
           return;
         } else await sleep(120); // rolling, wait or owl: let it play
       }
@@ -644,7 +660,8 @@ export default {
         st.flag.style.transform = '';
         await place(goal);
       }
-      if (live(t)) await sleep(1200);
+      if (live(t)) await st.saying;
+      if (live(t)) await sleep(600);
     }
     api.setDemo(async () => {
       startRound(round);

@@ -519,9 +519,9 @@ export default {
     }
 
     // ---------- demo ----------
+    // Waits for the recorded line to finish (and at least `ms`, the reading time when the voice is off).
     const narrate = async (text, ms) => {
-      say(text);
-      await sleep(ms);
+      await Promise.all([say(text), sleep(ms)]);
     };
     async function point(el, t, duration = 650) {
       await flyTo(hand, el, { duration, offset: { x: 8, y: 34 } });

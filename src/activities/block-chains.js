@@ -30,7 +30,9 @@ const ATTR = ['colour', 'shape', 'size'];
 const ALL_BLOCKS = [0, 1, 2, 3, 4, 5, 6, 7];
 const PHONE_MAX_W = 440; // below this width a 5-block chain does not fit one row
 const BUBBLE_MS = 2200; // how long the "what changed" bubble stays after a miss
-const STRONG_HINT_DELAY_MS = 1600; // pause before the automatic hint after 2 misses
+const STRONG_HINT_DELAY_MS = 500; // pause after the miss line ends before the automatic hint speaks
+// cap on waiting for a spoken line (ms): generous, so a line is never cut by the game's next line
+const SPEECH_CAP = (text) => 1500 + 90 * String(text).length;
 const diffs = (a, b) => ATTR.filter((_, i) => ((a ^ b) >> i) & 1);
 const dist = (a, b) => diffs(a, b).length;
 const FILL = [COLORS.red, COLORS.blue];
@@ -493,8 +495,9 @@ export default {
         return true;
       }
       const a = nb[0];
-      const lines =
-        need() === 2
+      const lines = !nb.length
+        ? ['Good! That block can go there.']
+        : need() === 2
           ? [`Yes! The ${both(nbd[0])} changed.`, `Lovely! Two changes: ${both(nbd[0])}.`]
           : new Set(nb).size > 1
             ? [`Yes! Every neighbour changes just one thing.`, `Lovely! One change to each neighbour.`]
@@ -515,29 +518,32 @@ export default {
       sl.classList.remove('shake');
       void sl.offsetWidth;
       sl.classList.add('shake');
+      let line;
       if (d && need() === 2) {
         showBubble(s, d, `${d.length}`);
-        api.nudge(
+        line =
           d.length === 3
             ? 'That changes all three! Change just two.'
-            : `That changes only the ${d[0]}. Change two things!`,
-        );
+            : `That changes only the ${d[0]}. Change two things!`;
       } else if (d) {
         showBubble(s, d, `${d.length}`);
-        api.nudge(
+        line =
           d.length === 3
             ? 'That one changes everything! Change just one thing.'
-            : `That changes ${d[0]} and ${d[1]}. Change just one thing!`,
-        );
+            : `That changes ${d[0]} and ${d[1]}. Change just one thing!`;
       } else {
         showBubble(s, [], '?');
-        api.nudge('That fits here, but then we get stuck. Try another!');
+        line = 'That fits here, but then we get stuck. Try another!';
       }
+      const spoken = api.nudge(line);
       if (S.streak >= 2) {
+        // the strong hint speaks too: wait for the miss line to finish first
         const g = gen;
-        later(() => {
-          if (g === gen) showHint(2, true);
-        }, STRONG_HINT_DELAY_MS);
+        Promise.race([spoken, sleep(SPEECH_CAP(line))]).then(() => {
+          later(() => {
+            if (g === gen && S.streak >= 2) showHint(2, true);
+          }, STRONG_HINT_DELAY_MS);
+        });
       }
     }
 

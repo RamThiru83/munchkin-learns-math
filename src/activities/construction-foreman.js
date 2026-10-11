@@ -29,7 +29,7 @@ const U = 30; // px per building unit in the scene
 const SCENE_LEFT = 3.3; // units of free ground left of the structures (where the builders stand)
 const WALK_UNITS_PER_S = 7; // builder walking speed in the build animation
 const LIFT_MS = 520; // a carried block grows into its place
-const CHEER_PAUSE_MS = 2600; // pause after the round cheer before the next round
+const CHEER_PAUSE_MS = 500; // pause after the round cheer has been spoken, before the next round
 const INK = '#2b2d42';
 const PAL = [
   '#ffd166',
@@ -367,9 +367,9 @@ function makeScene(cfg, tween, isAlive) {
         'stroke-width': 1.2,
       }),
     );
-  // TODO(bug): turnText is never appended to the svg, so "Turn n" / "Done in n turns!" set
-  // during the build animation are never shown in the scene.
+  // "Turn n" / "Done in n turns!" during the build animation
   const turnText = h('text', { x: 10, y: 22, 'font-size': 18, 'font-weight': 900, fill: INK }, '');
+  svg.append(turnText);
   const ghost = h('g', {});
   const real = h('g', {});
   const realEl = {};
@@ -557,6 +557,8 @@ export default {
     let ci = 0;
     const cheerTxt = () => cheers[ci++ % cheers.length];
     const isAlive = () => alive;
+    // Wait for a spoken line to finish (generously capped, so the game can never hang on it).
+    const spoken = (p, text) => Promise.race([p, sleep(1500 + 90 * text.length)]);
     // Promise-based rAF tween with ease-in-out; resolves early once the game is closed.
     const ease = (k) => (k < 0.5 ? 2 * k * k : 1 - Math.pow(-2 * k + 2, 2) / 2);
     function tween(ms, fn) {
@@ -776,11 +778,13 @@ export default {
       clearGlow();
       refresh();
     }
+    // One nudge per wrong drop: the reason, or from the 2nd miss the stronger hint when it has
+    // something to say (two nudges in a row would cut each other off).
     function wrong(msg, cell) {
       R.wrongs++;
-      api.nudge(msg);
       if (cell) shake(cell);
-      if (R.wrongs >= 2) strongHint();
+      const hint = R.wrongs >= 2 ? strongHint() : null;
+      api.nudge(hint || msg);
     }
     function attempt(id, r, t) {
       const why = check(id, r, t);
@@ -792,6 +796,7 @@ export default {
       return true;
     }
     // Glow the next block of the fastest plan that still fits around what she has planned.
+    // Returns the sentence to say instead of the plain reason, or null to keep the reason.
     function strongHint() {
       clearGlow();
       const fixed = new Map([...R.placed].map(([id, v]) => [id, v.turn]));
@@ -800,9 +805,9 @@ export default {
         const culprit = blocker(fixed);
         if (culprit) {
           R.cards[culprit].classList.add('glow');
-          api.nudge(`Tap block ${R.byId[culprit].num} to take it back.`);
-        } else api.nudge('Tap a block to take it back, then try again.');
-        return;
+          return `Tap block ${R.byId[culprit].num} to take it back.`;
+        }
+        return 'Tap a block to take it back, then try again.';
       }
       let best = null;
       for (const p of R.ps)
@@ -810,13 +815,14 @@ export default {
           const t = s.turnOf.get(p.id);
           if (!best || t < best.t) best = { id: p.id, t };
         }
-      if (!best) return;
+      if (!best) return null;
       R.cards[best.id].classList.add('glow');
       for (let r = 0; r < R.cfg.m; r++)
         if (!occupant(r, best.t)) {
           R.cells[r][best.t].classList.add('glow');
           break;
         }
+      return null;
     }
     // A planned block whose removal (with what rests on it) lets the plan fit again.
     function blocker(fixed) {
@@ -952,7 +958,8 @@ export default {
       else if (R.i === 1) msg = `Two builders: ${len} turns, not ${n}! ${msg}`;
       else if (R.i === 2) msg = `Fastest plan! Just ${len} turns. ${msg}`;
       else msg = `All built in ${len} turns! ${msg}`;
-      api.cheer(msg);
+      await spoken(api.cheer(msg), msg);
+      if (!alive || R !== myR) return;
       await sleep(CHEER_PAUSE_MS);
       if (!alive || R !== myR) return;
       myR.done();
@@ -972,8 +979,9 @@ export default {
       R.scene.reset();
       refresh();
       const s = solve(R.ps, R.cfg.m, R.cfg.T);
-      api.say(DEMO_SAY[R.i]);
-      await sleep(1400);
+      await spoken(api.say(DEMO_SAY[R.i]), DEMO_SAY[R.i]);
+      if (gone()) return;
+      await sleep(300);
       if (gone()) return;
       for (let t = 1; t <= s.len; t++) {
         const ids = R.ps.filter((p) => s.turnOf.get(p.id) === t).map((p) => p.id);
@@ -995,13 +1003,14 @@ export default {
       }
       refresh();
       R.buildBtn.hidden = true;
-      api.say('Now the builders get to work!');
-      await sleep(900);
+      await spoken(api.say('Now the builders get to work!'), 'Now the builders get to work!');
       if (gone()) return;
       await buildAnim(schedule(), s.len);
       if (gone()) return;
-      api.say(`Done in ${s.len} turns. Now you try!`);
-      await sleep(1600);
+      const doneLine = `Done in ${s.len} turns. Now you try!`;
+      await spoken(api.say(doneLine), doneLine);
+      if (gone()) return;
+      await sleep(400);
       if (gone()) return;
       for (const id of [...R.placed.keys()]) if (R.placed.has(id)) takeBack(id);
       R.scene.reset();

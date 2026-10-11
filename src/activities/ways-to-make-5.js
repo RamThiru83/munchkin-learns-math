@@ -24,7 +24,7 @@
 import { h, sleep, pick, drag, flyTo, glideBack, say, settings, resumeRound } from '../lib/core.js';
 
 const ID = 'ways-to-make-5';
-const HINT_DELAY = 1800; // ms before the stronger hint after a second miss in a row
+const HINT_DELAY = 2600; // ms before the stronger hint after a second miss in a row (the nudge must finish first)
 const WORDS = ['zero', 'one', 'two', 'three', 'four', 'five', 'six'];
 const ANIMALS = ['🐰', '🦊', '🐻', '🐼', '🐨', '🐸', '🦔', '🐥'];
 const CHEERS = ['Clink! A new way!', 'Lovely! Another way!', 'Yes! The gate is open!', 'Ooh, a different way!'];
@@ -210,6 +210,7 @@ export default {
     let revealed = false;
     let epoch = 0;
     let justAdded = null;
+    let lastCheer = '';
     const sum = () => coins.reduce((a, b) => a + b, 0);
     const glow = (el) => {
       el.classList.add('glow', 'hop');
@@ -350,7 +351,11 @@ export default {
         wrong++;
         restart(tray, 'shake', 450);
         const room = R.target - sum();
-        api.nudge(`Too big! Only ${room} more fits.`);
+        if (room > 0) api.nudge(`Too big! Only ${room} more fits.`);
+        else {
+          glow(btnClear);
+          api.nudge('The slot is full. Take a coin out.');
+        }
         if (wrong >= 2) later(giveHint, HINT_DELAY);
         return false;
       }
@@ -462,7 +467,10 @@ export default {
           if (!revealed && found.length >= 2) {
             revealed = true;
             line = `Clink! There are ${ways.length} ways in all.`;
-          } else line = pick(CHEERS);
+          } else {
+            line = pick(CHEERS.filter((c) => c !== lastCheer));
+            lastCheer = line;
+          }
           renderShelf();
           if (found.length === ways.length) line = `All ${ways.length} ways! Wonderful!`;
           api.cheer(line);
@@ -481,18 +489,19 @@ export default {
       coins = [];
       renderTray();
       if (found.length === ways.length) {
-        await sleep(2300);
+        await sleep(1000);
         if (!ok()) return;
         if (round < ROUNDS.length - 1) setupRound(round + 1);
         else api.finish();
         return;
       }
       busy = false;
-      await sleep(isNew ? 1700 : 900);
-      if (!ok()) return;
+      await sleep(isNew ? 1200 : 700);
+      // The child may already be paying the gate again: never talk over that count.
+      if (!ok() || busy) return;
       if (!isNew && wrong >= 2) {
         api.prompt('Try different coins this time.');
-        later(giveHint, 1400);
+        later(giveHint, 2200);
         return;
       }
       const left = ways.length - found.length;
@@ -545,7 +554,9 @@ export default {
           if (!ok()) return;
         }
       }
-      await talk('There are more ways. Now you try!');
+      await talk(
+        ways.length - list.length === 1 ? 'One more way is left. Now you try!' : 'There are more ways. Now you try!',
+      );
       if (!ok()) return;
       demoOn = false;
       setupRound(round);

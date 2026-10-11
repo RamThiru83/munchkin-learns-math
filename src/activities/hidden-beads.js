@@ -33,7 +33,8 @@ import { h, sleep, pick, shuffle, range, drag, flyTo, say, resumeRound } from '.
 
 const ID = 'hidden-beads';
 const MIN_P = 46; // smallest bead pitch in one row (bead = pitch - 6 px, so >= 40 px)
-const HINT_DELAY = 1500; // ms before the stronger hint after a second miss in a row
+const HINT_DELAY = 600; // ms after the nudge has finished before the stronger hint (second miss in a row)
+const showing = (s) => (s === 1 ? '1 is showing' : `${s} are showing`);
 const SPECS = [
   { sizes: [3, 4], asks: 2, colors: ['#ff8fab'] },
   { sizes: [5], asks: 3, colors: ['#4cc9f0'] },
@@ -147,8 +148,9 @@ export default {
       }, ms);
       timers.add(t);
     };
-    // Speak, but never wait longer than a length-based cap (speech may be off or slow).
-    const talk = (text) => Promise.race([say(text), sleep(600 + text.length * 50)]);
+    // Wait for a spoken line, but never longer than a generous length-based cap (speech may be off or slow).
+    const spoken = (p, text) => Promise.race([p, sleep(1500 + text.length * 90)]);
+    const talk = (text) => spoken(say(text), text);
 
     api.css(CSS);
     const wrap = h('div', { class: `a-${ID}` });
@@ -348,14 +350,18 @@ export default {
       counted++;
       b.classList.add('counted');
       label(b, counted);
-      say(String(counted));
-      if (counted === rd.n) onCounted();
+      const num = say(String(counted));
+      if (counted === rd.n) onCounted(num);
     }
-    async function onCounted() {
+    // The last number must finish before the cheer, and the cheer before the first question.
+    async function onCounted(lastNumber) {
       phase = 'busy';
       const ep = epoch;
       setBond('whole', rd.n);
-      await Promise.race([api.cheer(`${rd.n} beads in all!`), sleep(1400)]);
+      await Promise.race([lastNumber, sleep(900)]);
+      if (!alive || ep !== epoch || demoOn) return;
+      const line = `${rd.n} beads in all!`;
+      await spoken(api.cheer(line), line);
       if (alive && ep === epoch && !demoOn) startQuestion();
     }
 
@@ -429,10 +435,18 @@ export default {
       const chip = chips.querySelector(`[data-n="${v}"]`);
       chip?.classList.add('shake');
       later(() => chip?.classList.remove('shake'), 450);
-      if (v === s) api.nudge(`${s} are showing. How many hide?`);
-      else if (v === rd.n) api.nudge(`That is all ${rd.n}. Some are showing!`);
-      else api.nudge(`Count on from ${s} up to ${rd.n}.`);
-      if (wrong >= 2) later(strongHint, HINT_DELAY);
+      const line =
+        v === s
+          ? `${showing(s)}. How many hide?`
+          : v === rd.n
+            ? `That is all ${rd.n}. Some are showing!`
+            : `Count on from ${s} up to ${rd.n}.`;
+      const said = spoken(api.nudge(line), line);
+      // The stronger hint waits for the nudge to finish, so it never talks over it.
+      if (wrong >= 2) {
+        const ep = epoch;
+        said.then(() => later(() => ep === epoch && strongHint(), HINT_DELAY));
+      }
     }
     // After two misses: the cup turns see-through so the hidden beads can be counted.
     function strongHint() {
@@ -484,8 +498,10 @@ export default {
       setBond('hide', k);
       found.push(k);
       renderWays();
-      api.cheer(`${pick(CHEERS)} ${rd.n - k} and ${k} make ${rd.n}.`);
-      await sleep(2200);
+      const line = `${pick(CHEERS)} ${rd.n - k} and ${k} make ${rd.n}.`;
+      await spoken(api.cheer(line), line); // the whole cheer plays before the next line
+      if (!ok()) return;
+      await sleep(500);
       if (!ok()) return;
       q++;
       if (q < rd.qs.length) startQuestion();
@@ -535,7 +551,7 @@ export default {
       b.classList.remove('under');
       b.removeAttribute('aria-hidden');
       hidden--;
-      api.prompt(`One came back. ${rd.n - hidden} are showing.`);
+      api.prompt(`One came back. ${showing(rd.n - hidden)}.`);
     });
     btnDone.addEventListener('click', () => {
       if (phase !== 'move' || demoOn) return;
@@ -552,7 +568,7 @@ export default {
       tools.hidden = true;
       setBond('show', rd.n - hidden);
       showChips();
-      api.prompt(`${rd.n - hidden} are showing. How many are hiding?`);
+      api.prompt(`${showing(rd.n - hidden)}. How many are hiding?`);
     });
     async function checkMake() {
       if (hidden === Q().k) return success();
@@ -562,8 +578,10 @@ export default {
       wrong++;
       const k = hidden;
       if (!(await reveal())) return;
-      api.nudge(`The cup hides ${k}. We need ${Q().k}.`);
-      await sleep(1600);
+      const line = `The cup hides ${k}. We need ${Q().k}.`;
+      await spoken(api.nudge(line), line);
+      if (!ok()) return;
+      await sleep(400);
       if (!ok()) return;
       for (const b of beads) {
         if (b.classList.contains('was')) b.classList.add('under');
@@ -622,11 +640,11 @@ export default {
         await talk('Done! Lift the cup.');
       } else {
         const s = rd.n - hidden;
-        await talk(`${s} are showing. ${rd.n} in all.`);
+        await talk(`${showing(s)}. ${rd.n} in all.`);
         if (!ok()) return;
         const chip = chips.querySelector(`[data-n="${hidden}"]`);
         chip?.classList.add('glow');
-        await talk(`So ${hidden} are hiding.`);
+        await talk(hidden === 1 ? 'So 1 is hiding.' : `So ${hidden} are hiding.`);
       }
       if (!ok() || !(await reveal())) return;
       setBond('hide', hidden);

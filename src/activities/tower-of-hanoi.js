@@ -356,8 +356,8 @@ ${C} .info .btn{min-height:56px}
       clearGlow();
       updateMoves(true);
       discs.forEach((d, s) => setTimeout(() => alive && wiggle(s, 'hop'), s * 120));
-      api.cheer(pick(CHEERS));
-      await sleep(2600);
+      await talk(pick(CHEERS), 'cheer'); // let the cheer finish before the next round speaks
+      await sleep(500);
       if (!alive) return;
       if (round + 1 < ROUNDS.length) startRound(round + 1);
       else api.finish();
@@ -487,7 +487,8 @@ ${C} .info .btn{min-height:56px}
     const roundPrompt = () => ROUND_PROMPT[round].replace('{B}', best);
 
     // ---------- demo: reset, then auto-solve with narration ----------
-    const talk = (text, cap = 2600) => Promise.race([api.prompt(text), sleep(cap)]);
+    // Speak a line and wait for it to finish (capped generously, in case a clip never reports its end).
+    const talk = (text, kind = 'prompt') => Promise.race([api[kind](text), sleep(1500 + 90 * text.length)]);
     api.setDemo(async () => {
       if (solved) return;
       demoing = true;
@@ -507,7 +508,6 @@ ${C} .info .btn{min-height:56px}
         ROUNDS[round].mixed
           ? 'Watch! Biggest pancake goes to the star first.'
           : 'Watch! One pancake at a time. Never big on small.',
-        3200,
       );
       if (!alive) return;
       const plan = planMoves(pos, goal);
@@ -515,18 +515,19 @@ ${C} .info .btn{min-height:56px}
         if (!alive) return;
         const s = topOf(pos, mv[0]);
         const where = mv[1] === goal ? 'the star' : `the ${PEG_WORD[mv[1]]}`;
-        api.prompt(`${SIZE_WORDS[n][s][0].toUpperCase() + SIZE_WORDS[n][s].slice(1)} pancake to ${where}.`);
-        await sleep(450);
+        // The pancake flies while the line is spoken; the next line waits for both to finish.
+        await Promise.all([
+          talk(`${SIZE_WORDS[n][s][0].toUpperCase() + SIZE_WORDS[n][s].slice(1)} pancake to ${where}.`),
+          sleep(350).then(() => (alive ? doMove(mv[0], mv[1]) : null)),
+        ]);
         if (!alive) return;
-        await doMove(mv[0], mv[1]);
-        if (!alive) return;
-        await sleep(350);
+        await sleep(250);
       }
       if (!alive) return;
       updateMoves(true);
-      await talk(`Done in ${plan.length} moves! Now you try.`, 3000);
+      await talk(`Done in ${plan.length} moves! Now you try.`);
       if (!alive) return;
-      await sleep(600);
+      await sleep(500);
       if (!alive) return;
       // back to the start so the child can do it
       pos = startPos.slice();

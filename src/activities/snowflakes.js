@@ -191,7 +191,7 @@ const ROUNDS = [
   },
   {
     ...QUARTER,
-    minCuts: 1,
+    minCuts: 2, // the picture always has two shapes
     paper: '#90e0a8',
     make: true,
     intro: 'Can you snip a paper to match a picture?',
@@ -680,11 +680,11 @@ export default {
         if (miss) {
           busy = true;
           wrongs++;
-          api.nudge(miss);
-          await sleep(2600);
+          const hint = api.nudge(miss);
+          await sleep(1600); // look at the mismatch, then fold back while the hint finishes
           if (!alive) return;
           sfx('flip');
-          await animate(nseg(), 0);
+          await Promise.all([animate(nseg(), 0), hint]);
           if (!alive) return;
           R.unfolded = false;
           setTools(true);
@@ -863,7 +863,8 @@ export default {
         sfx('flip');
         await animate(nseg(), 0);
         if (!alive) return;
-        api.cheer('It folds right back into that paper!');
+        const last = api.cheer('It folds right back into that paper!');
+        if (R.i === ROUNDS.length - 1) await last; // the finish card speaks next
       } else {
         api.cheer(
           pick(['Yes! Let us open it and check.', 'Good thinking! Let us unfold it.', 'I think so too! Let us see.']),
@@ -880,7 +881,7 @@ export default {
         return;
       }
       busy = true;
-      await sleep(2800);
+      await sleep(600);
       if (!alive) return;
       api.finish();
     }
@@ -900,12 +901,12 @@ export default {
       choiceBtns = [];
       buildPaper(cfg);
       render(nseg());
-      api.prompt(cfg.intro);
+      const intro = api.prompt(cfg.intro);
       if (cfg.reverse) {
         busy = true;
         buildReverse().forEach(addCut);
         sfx('flip');
-        await sleep(1800);
+        await Promise.all([sleep(1500), intro]);
         if (!alive) return;
         choicesRow.replaceChildren(...choiceBtns);
         busy = false;
@@ -915,10 +916,10 @@ export default {
       }
       if (cfg.make) buildTarget();
       busy = true;
-      await sleep(1100);
+      await sleep(700); // the fold starts while the intro line plays
       if (!alive) return;
       if (i > 0) sfx('flip');
-      await animate(nseg(), 0);
+      await Promise.all([animate(nseg(), 0), intro]); // the intro line finishes before the next one
       if (!alive) return;
       if (!cfg.predict) {
         buildTools();
@@ -944,6 +945,8 @@ export default {
     }
 
     // ---------- Watch demo ----------
+    // A demo line: wait for it to be spoken (and at least ms) before the next step talks over it.
+    const tell = (text, ms) => Promise.all([api.say(text), sleep(ms)]);
     async function scissorsTo(x, y, ms = 650) {
       const r = wrap.getBoundingClientRect();
       scissors.classList.add('on');
@@ -976,27 +979,24 @@ export default {
         if (!alive) return;
         select(type);
         sfx('tap');
-        api.say(`${k ? 'Now' : 'First,'} pick the ${SHAPE_NAME[type]}.`);
-        await sleep(1300);
+        await tell(`${k ? 'Now' : 'First,'} pick the ${SHAPE_NAME[type]}.`, 1000);
         if (!alive) return;
         await scissorsTo(...toClient(pt));
         if (!alive) return;
         const c = placeAt(cfg, pt, type);
         addCut(c);
         sfx('pop');
-        api.say(c.loc === 'in' ? 'Snip, in the middle of the paper.' : 'Snip, right on the fold!');
-        await sleep(1400);
+        await tell(c.loc === 'in' ? 'Snip, in the middle of the paper.' : 'Snip, right on the fold!', 1000);
         if (!alive) return;
       }
       await scissorsTo(...centre(unfoldBtn));
       if (!alive) return;
-      api.say('Now, unfold!');
+      const unfoldLine = api.say('Now, unfold!');
       setTools(false);
       sfx('whoosh');
-      await animate(0, nseg());
+      await Promise.all([animate(0, nseg()), unfoldLine]);
       if (!alive) return;
-      api.say(cfg.demoEnd);
-      await sleep(3000);
+      await tell(cfg.demoEnd, 2000);
       if (!alive) return;
       hideScissors();
       sfx('flip');
@@ -1010,21 +1010,19 @@ export default {
       const ok = choiceBtns.find((x) => x._opt.kind === 'ok');
       await scissorsTo(...centre(board));
       if (!alive) return;
-      api.say('Every layer gets the same snips.');
-      await sleep(1800);
+      await tell('Every layer gets the same snips.', 1500);
       if (!alive) return;
       await scissorsTo(...centre(ok));
       if (!alive) return;
       ok.classList.add('glow');
-      api.say('So this snowflake matches.');
-      await sleep(1800);
+      await tell('So this snowflake matches.', 1500);
       if (!alive) return;
       hideScissors();
-      api.say('Let us unfold and check.');
+      const check = api.say('Let us unfold and check.');
       sfx('whoosh');
-      await animate(0, nseg());
+      await Promise.all([animate(0, nseg()), check]);
       if (!alive) return;
-      await sleep(2500);
+      await sleep(2000);
       if (!alive) return;
       sfx('flip');
       await animate(nseg(), 0);
@@ -1036,21 +1034,19 @@ export default {
       const ok = choiceBtns.find((x) => x._opt.kind === 'ok');
       await scissorsTo(...centre(board));
       if (!alive) return;
-      api.say('Look at the shapes on each arm.');
-      await sleep(2000);
+      await tell('Look at the shapes on each arm.', 1500);
       if (!alive) return;
       await scissorsTo(...centre(ok));
       if (!alive) return;
       ok.classList.add('glow');
-      api.say('This folded paper has the same shapes, in the same places.');
-      await sleep(2400);
+      await tell('This folded paper has the same shapes, in the same places.', 1500);
       if (!alive) return;
       hideScissors();
-      api.say('Let us fold it up and check.');
+      const check = api.say('Let us fold it up and check.');
       sfx('flip');
-      await animate(nseg(), 0);
+      await Promise.all([animate(nseg(), 0), check]);
       if (!alive) return;
-      await sleep(2500);
+      await sleep(2000);
       if (!alive) return;
       sfx('whoosh');
       await animate(0, nseg());

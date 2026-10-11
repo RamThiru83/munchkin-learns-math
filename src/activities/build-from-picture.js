@@ -39,7 +39,10 @@ const CELL_MAX = 64; // largest cell size tried by layout(), px
 const CELL_MIN = 30; // smallest cell size, px
 const DRAG_START = 7; // px of pointer travel before a press becomes a drag (otherwise a tap = turn)
 const SNAP_DIST = 0.9; // max distance (cells) from the drop point to a snap position
-const WIN_PAUSE = 2600; // ms between the win cheer and the next round
+const WIN_SHOW = 1600; // min ms the won board (green border, reveal, hopping shapes) stays, even with the voice off
+const WIN_PAUSE = 500; // ms between the end of the win cheer and the next round
+// cap on waiting for a spoken line (ms): generous, so a line is never cut by the game's next line
+const SPEECH_CAP = (text) => 1500 + 90 * String(text).length;
 
 // ---- shapes: [x, y, quarters] per cell, in the starting turn ----
 const ALL = [0, 1, 2, 3];
@@ -542,7 +545,7 @@ export default {
           `Build the ${n}. Tap a shape to turn it.`,
           `Fill the whole ${n}. Many ways can work!`,
           `Build the ${n}. One shape is not needed!`,
-          `Build the big ${n.replace(/^big /, '')}. One shape is spare.`,
+          `Build the ${n}. One shape is spare.`,
         ][i],
       );
     }
@@ -857,8 +860,8 @@ export default {
       wrongs++;
       if (wrongs >= 2) {
         wrongs = 0;
-        api.nudge('Look! The blinking shape shows where it fits.');
-        hint(true);
+        // hint(true) speaks its own line when the board is a dead end
+        if (!hint(true)) api.nudge('Look! The blinking shape shows where it fits.');
         return;
       }
       api.nudge(
@@ -910,6 +913,7 @@ export default {
       return sol ? sol[0] : false;
     }
     // Show the ghost spot and glow the piece; strong = also turn the piece for the child.
+    // Returns true when the board was a dead end (pieces were lifted off and a line was spoken).
     function hint(strong) {
       let g = findHint();
       const stuck = g === false;
@@ -923,7 +927,7 @@ export default {
         }
         api.nudge('Let us move that one back. Now try again!');
       }
-      if (!g) return;
+      if (!g) return stuck;
       st.ghost = g;
       drawBoard();
       const p = st.pieces[g.pid];
@@ -940,6 +944,7 @@ export default {
             ? 'This glowing shape fits in the blinking spot.'
             : 'This glowing shape fits there. Tap to turn it.',
         );
+      return stuck;
     }
 
     // ---------- round end ----------
@@ -956,7 +961,10 @@ export default {
           p.el.classList.add('hop');
         }, k * 90),
       );
-      api.cheer(`${pick(WIN)} You built the ${st.puz.name}!`);
+      const line = `${pick(WIN)} You built the ${st.puz.name}!`;
+      // with the voice off the cheer resolves at once; WIN_SHOW keeps the won board up for the hops
+      await Promise.all([Promise.race([api.cheer(line), sleep(SPEECH_CAP(line))]), sleep(WIN_SHOW)]);
+      if (!alive || r !== round) return;
       await sleep(WIN_PAUSE);
       if (!alive || r !== round) return;
       if (r < POOL.length - 1) newRound(r + 1);
@@ -982,8 +990,10 @@ export default {
         unplace(p);
         posPiece(p, true);
       });
-      api.prompt('Watch me fit the shapes, one by one.');
-      await sleep(900);
+      const intro = 'Watch me fit the shapes, one by one.';
+      await Promise.race([api.prompt(intro), sleep(SPEECH_CAP(intro))]);
+      if (!alive || st !== me) return;
+      await sleep(300);
       if (!alive || st !== me) return;
       let n = 0;
       for (const id of me.order) {
@@ -1019,13 +1029,17 @@ export default {
       const spare = me.pieces.filter((p) => p.extra);
       if (spare.length) {
         spare.forEach((p) => p.el.classList.add('glowing'));
-        api.say('This shape was not needed.');
-        await sleep(1800);
+        const spareLine = 'This shape was not needed.';
+        await Promise.race([api.say(spareLine), sleep(SPEECH_CAP(spareLine))]);
+        if (!alive || st !== me) return;
+        await sleep(400);
         if (!alive || st !== me) return;
         spare.forEach((p) => p.el.classList.remove('glowing'));
       }
-      api.cheer('All filled, no gaps! Now you try.');
-      await sleep(2200);
+      const doneLine = 'All filled, no gaps! Now you try.';
+      await Promise.race([api.cheer(doneLine), sleep(SPEECH_CAP(doneLine))]);
+      if (!alive || st !== me) return;
+      await sleep(400);
       if (!alive || st !== me) return;
       me.pieces.forEach((p) => {
         unplace(p);

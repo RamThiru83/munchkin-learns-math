@@ -399,13 +399,17 @@ export default {
       glowEls.forEach((e) => e.classList.remove('glow'));
       glowEls.clear();
     }
+    // Speak, but never wait longer than a generous length-based cap.
+    const spoken = (p, text) => Promise.race([p, sleep(1500 + 90 * text.length)]);
     function wrongTry(msg, later = false) {
       wrong++;
-      api.nudge(msg);
+      const p = spoken(api.nudge(msg), msg);
+      // The automatic hint waits for the nudge to finish instead of talking over it.
       if (wrong >= MISSES_FOR_HINT && !later)
-        setTimeout(() => {
+        p.then(async () => {
+          await sleep(300);
           if (alive && !busy && !demoOn) showHint(true);
-        }, 1400);
+        });
     }
     function remindUndo() {
       glow(undoBtn);
@@ -521,8 +525,8 @@ export default {
       if (isGoal(R, state)) return roundWon();
       wrong = 0;
       asks = 0;
-      // TODO(bug): never true - after one crossing the boat is on side 1 (probably meant history.length === 2).
-      if (state.boat === 0 && history.length === 1) api.prompt('The boat is back. Who goes next?');
+      // The first time the boat returns to the start bank (two crossings made).
+      if (state.boat === 0 && history.length === 2) api.prompt('The boat is back. Who goes next?');
     }
 
     async function undo() {
@@ -622,11 +626,14 @@ export default {
     async function roundWon() {
       busy = true;
       updateBtns();
-      api.cheer(
-        pick(['Everyone made it across!', 'Wonderful rowing, captain!', 'Hooray, all safe on the other side!']),
-      );
+      const line = pick([
+        'Everyone made it across!',
+        'Wonderful rowing, captain!',
+        'Hooray, all safe on the other side!',
+      ]);
       Object.values(els).forEach((e) => e.classList.add('hop'));
-      await sleep(2000);
+      await spoken(api.cheer(line), line);
+      await sleep(500);
       if (!alive) return;
       if (ri < ROUNDS.length - 1) render(ri + 1);
       else {
@@ -672,8 +679,8 @@ export default {
         if (!alive) return;
       }
       Object.values(els).forEach((e) => e.classList.add('hop'));
-      api.cheer('Everyone is across! Now you try.');
-      await sleep(2200);
+      await spoken(api.cheer('Everyone is across! Now you try.'), 'Everyone is across! Now you try.');
+      await sleep(500);
       if (!alive) return;
       render(ri);
       demoOn = false;

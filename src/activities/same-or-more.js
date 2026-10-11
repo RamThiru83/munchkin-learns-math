@@ -161,6 +161,11 @@ export default {
     const W = () => field.clientWidth || 320;
     const answer = () => (cfg.nB === cfg.nK ? 'same' : cfg.nB > cfg.nK ? 'berries' : 'baskets');
     const live = (t) => alive && t === tok;
+    // A spoken line, capped generously so the game never waits forever; `pending` is the latest instruction,
+    // so the next automatic line can wait for it instead of cutting it off.
+    const capped = (p, text) => Promise.race([p, sleep(1500 + 90 * text.length)]);
+    let pending = Promise.resolve();
+    const instruct = (text) => (pending = capped(api.prompt(text), text));
 
     // ---------- layout ----------
     // Distance between item centres, in px, for n items. 'spread' fills the field (capped at 5.5 item widths),
@@ -276,15 +281,15 @@ export default {
       actions.replaceChildren(pairBtn);
       syncPairBtn();
     }
-    function askNow() {
+    function askNow(speak = true) {
       phase = 'ask';
       choices.hidden = false;
       showPairBtn();
-      api.prompt(ASK);
+      if (speak) instruct(ASK);
     }
 
     // ---------- the "moving" step ----------
-    async function transform() {
+    async function transform(speak = true) {
       if (phase !== 'spread' && phase !== 'intro') return;
       const t = tok,
         trs = cfg.transform;
@@ -293,9 +298,9 @@ export default {
       sfx('whoosh');
       for (const tr of trs) modes[tr.row] = tr.mode;
       layoutAll(false);
-      await sleep(1100);
+      await Promise.all([sleep(1100), pending]); // the move animation, and the instruction still playing
       if (!live(t)) return;
-      askNow();
+      askNow(speak);
     }
 
     // ---------- answering ----------
@@ -307,13 +312,12 @@ export default {
         phase = 'done';
         choices.hidden = false;
         Object.values(optBtns).forEach((b) => b.classList.remove('glow'));
-        api.cheer(pick(CHEERS));
-        if (!paired) await pairUp(false);
+        const cheer = pick(CHEERS);
+        await Promise.all([capped(api.cheer(cheer), cheer), paired ? null : pairUp(false)]);
         if (!live(t)) return;
-        await sleep(600);
+        await sleep(300);
         if (!live(t)) return;
-        api.prompt(RESULT[key]);
-        await sleep(2600);
+        await capped(api.prompt(RESULT[key]), RESULT[key]); // Next appears as soon as the line ends
         if (!live(t)) return;
         if (round < TOTAL - 1) {
           actions.replaceChildren(
@@ -340,10 +344,9 @@ export default {
       btn.classList.add('shake');
       setTimeout(() => btn.classList.remove('shake'), 450);
       if (wrong >= 2) optBtns[answer()].classList.add('glow');
-      api.nudge(
-        wrong === 1 ? 'Hmm, let us check! One berry for each basket.' : 'Look at the pairs. Is anyone left over?',
-      );
-      await pairUp(false);
+      const hint =
+        wrong === 1 ? 'Hmm, let us check! One berry for each basket.' : 'Look at the pairs. Is anyone left over?';
+      await Promise.all([capped(api.nudge(hint), hint), pairUp(false)]);
       if (!live(t)) return;
       api.prompt(wrong >= 2 ? 'Tap the glowing one.' : 'Now look. Same, or more?');
     }
@@ -367,13 +370,14 @@ export default {
       api.stage(round, TOTAL);
       if (round === 0) {
         phase = 'intro';
-        api.prompt('Berries on top, baskets below. Watch!');
-        await sleep(2600);
+        await instruct('Berries on top, baskets below. Watch!');
+        if (!live(t)) return;
+        await sleep(300);
         if (!live(t)) return;
         await transform();
       } else if (cfg.transform.length) {
         phase = 'spread';
-        api.prompt(cfg.ask);
+        instruct(cfg.ask);
         actions.replaceChildren(
           h(
             'button',
@@ -406,7 +410,7 @@ export default {
       if (phase === 'spread') {
         await narrate(cfg.demo, 800);
         if (!live(t)) return;
-        await transform();
+        await transform(false); // the demo asks in its own words next
         if (!live(t)) return;
       }
       const wasDone = phase === 'done';

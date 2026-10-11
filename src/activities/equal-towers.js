@@ -317,7 +317,7 @@ export default {
       if (T.removed) T.removed--;
       else if (height(T) < height(other(T))) T.added++;
       else return towerMiss('That tower is taller. Add to the shorter one.');
-      afterMove(T, 'top');
+      return afterMove(T, 'top');
     }
     // - takes back a new block, else takes a block off this tower if it is the taller one (round 2 only).
     function minus(T, demo = false) {
@@ -325,29 +325,30 @@ export default {
       if (T.added) T.added--;
       else if (height(T) > height(other(T))) T.removed++;
       else return towerMiss('That tower is shorter. Take from the taller one.');
-      afterMove(T, 'gone');
+      return afterMove(T, 'gone');
     }
-    function afterMove(T, pop) {
+    // Says the new height; when the towers become equal, waits for that number and then asks.
+    // Resolves when the question has been spoken (the demo awaits it).
+    async function afterMove(T, pop) {
       miss = 0;
       unglow();
       sfx('pop');
       drawTower(T, pop);
-      const a = height(towers[0]);
-      say(String(height(T)));
-      if (a === height(towers[1])) towersEqual();
+      const equal = height(towers[0]) === height(towers[1]);
+      if (equal) towers.forEach((x) => (x.plus.disabled = x.minus.disabled = true));
+      const t = tok;
+      await say(String(height(T)));
+      if (!equal || !live(t)) return;
+      await towersEqual();
     }
     function towersEqual() {
-      towers.forEach((T) => {
-        T.plus.disabled = true;
-        T.minus.disabled = true;
-      });
       const lo = S.hs[0] < S.hs[1] ? towers[0] : towers[1];
       // If any block was taken off, "how many fewer" still means the first difference; "how many more did
       // she need" would not (she may have added only some).
       const q = tookOff()
         ? `Same height! How many fewer blocks did ${lo.f.name} have?`
         : `Same height! How many more did ${lo.f.name} need?`;
-      ask(q);
+      return ask(q);
     }
 
     // ---------- story (round 3) ----------
@@ -494,6 +495,12 @@ export default {
         : `Lion's ${S.big}, but take away the ${S.d} extra.`;
     }
     const busy = () => wrap.closest('.demo-running') !== null;
+    let lastCheer = '';
+    const pickCheer = () => {
+      const opts = CHEERS.filter((c) => c !== lastCheer);
+      lastCheer = opts[rand(opts.length)];
+      return lastCheer;
+    };
     async function answer(n) {
       if (!asked || busy()) return;
       sfx('tap');
@@ -513,7 +520,7 @@ export default {
       chips.querySelector(`[data-n="${n}"]`).classList.add('sel');
       const t = tok;
       const last = si === steps.length - 1;
-      const word = CHEERS[rand(CHEERS.length)];
+      const word = pickCheer();
       if (!last) {
         await capped(api.cheer(`${word} ${n}! Now another one.`), 4000);
         if (live(t)) startStep(si + 1);
@@ -576,9 +583,9 @@ export default {
         if (!ok()) return;
         await narr(take ? `Take blocks off ${hi.f.name}'s tower.` : `Add blocks to ${lo.f.name}'s tower.`, 200);
         while (ok() && height(lo) !== height(hi)) {
-          if (take) minus(hi, true);
-          else plus(lo, true);
-          await sleep(900);
+          // Each move says the height; the last one also asks the question. Wait for it.
+          await (take ? minus(hi, true) : plus(lo, true));
+          await sleep(height(lo) === height(hi) ? 400 : 300);
         }
       } else if (S.kind === 'bar' || S.kind === 'cmp') {
         setObjs(true);
@@ -592,22 +599,22 @@ export default {
         if (
           !ok() ||
           !(await numberCells(cells.slice(0, a), 1)) ||
-          !(await numberCells(cells.slice(a), a + 1, { delay: 700, speak: true, t }))
+          !(await numberCells(cells.slice(a), a + 1, { delay: 750, speak: true, t }))
         )
           return;
       } else if (S.kind === 'bar') {
         await narr(`Start at ${S.r}. Count on to ${S.w}.`, 100);
-        if (!(await numberCells(cells, S.r + 1, { delay: 700, speak: true, t }))) return;
-        await narr(`That is ${S.ans} more.`, 100);
+        if (!(await numberCells(cells, S.r + 1, { delay: 750, speak: true, t }))) return;
+        await narr(`${S.ans} are blue.`, 100);
       } else if (S.kind === 'cmp') {
         await narr(
           S.unk === 'extra' ? 'Count the extra piece.' : `Take away Lion's extra ${S.d}. Count Mouse's part.`,
           100,
         );
-        if (!(await numberCells(cells, 1, { delay: 600, speak: true, t }))) return;
+        if (!(await numberCells(cells, 1, { delay: 750, speak: true, t }))) return;
       } else {
         await narr('Count the blocks that changed.', 100);
-        if (!(await numberCells(cells, 1, { delay: 600, speak: true, t }))) return;
+        if (!(await numberCells(cells, 1, { delay: 750, speak: true, t }))) return;
       }
       if (!ok()) return;
       const chip = chips.querySelector(`[data-n="${S.ans}"]`);

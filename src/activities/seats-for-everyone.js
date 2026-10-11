@@ -196,8 +196,21 @@ export default {
     const S = () => slots[0]?.el.offsetWidth || 64;
     const MOVABLE = ['seat', 'mark', 'match', 'ask', 'fixMore'];
     const canMove = () => !locked && MOVABLE.includes(phase);
+    // The game's own lines go through prompt/cheer so a later step can wait for the last one (`settle`)
+    // instead of guessing a sleep and talking over it.
+    let lastSay = Promise.resolve();
+    const prompt = (text) => (lastSay = api.prompt(text));
+    const cheer = (text) => (lastSay = api.cheer(text));
+    const settle = async (ms = 500) => {
+      let p;
+      do {
+        p = lastSay;
+        await p;
+      } while (alive && lastSay !== p); // a line queued right behind the last one
+      if (alive) await sleep(ms);
+    };
     const narrate = async (text, ms = 1100) => {
-      if (alive) await Promise.all([api.prompt(text), sleep(ms)]);
+      if (alive) await Promise.all([prompt(text), sleep(ms)]);
     };
     const clearGlow = () => slots.forEach((s) => s.el.classList.remove('glow'));
     const markLeft = (on) => {
@@ -371,7 +384,7 @@ export default {
         if (phase === 'ask') {
           phase = round >= 2 ? 'match' : 'seat';
           choices.hidden = true;
-          api.prompt(round >= 2 ? 'Sit each friend on a star.' : 'Keep going. Try another way!');
+          prompt(round >= 2 ? 'Sit each friend on a star.' : 'Keep going. Try another way!');
         }
         return;
       }
@@ -389,7 +402,7 @@ export default {
       choices.hidden = false;
       Object.values(optBtns).forEach((b) => b.classList.remove('glow'));
       const left = animals.some((a) => !a.slot);
-      api.prompt(
+      prompt(
         round >= 2
           ? 'Is there a chair for every friend?'
           : left
@@ -405,8 +418,7 @@ export default {
         phase = 'busy';
         choices.hidden = true;
         markLeft(round < 2);
-        api.cheer(pick(CHEERS));
-        await sleep(1200);
+        await Promise.all([cheer(pick(CHEERS)), sleep(900)]);
         if (!live(t)) return;
         if (round === 1) fixStep(key);
         else await reveal(key);
@@ -431,7 +443,7 @@ export default {
     function fixStep(key, again) {
       if (key === 'more') {
         phase = 'fixAdd';
-        api.prompt(
+        prompt(
           again ? 'Another friend is standing. Bring one more chair.' : 'Not enough chairs! Bring one more chair.',
         );
         actions.replaceChildren(
@@ -451,7 +463,7 @@ export default {
         );
       } else {
         phase = 'fixSpare';
-        api.prompt('Too many chairs! Tap the empty chair to put it away.');
+        prompt('Too many chairs! Tap the empty chair to put it away.');
         markLeft(true);
         slots.filter((s) => !s.occ).forEach((s) => s.el.classList.add('glow'));
       }
@@ -467,7 +479,7 @@ export default {
       resnap();
       sfx('pop');
       s.el.classList.add('glow');
-      api.prompt('Now the standing friend can sit down.');
+      prompt('Now the standing friend can sit down.');
       phase = 'fixMore';
     }
     async function removeSlot(s) {
@@ -487,7 +499,7 @@ export default {
         phase = 'fixSpare';
         markLeft(true);
         slots.filter((x) => !x.occ).forEach((x) => x.el.classList.add('glow'));
-        api.prompt('Another empty chair. Put it away too.');
+        prompt('Another empty chair. Put it away too.');
       } else finishRound('Now every chair has a friend!');
     }
     async function finishRound(msg, keepMark) {
@@ -500,8 +512,8 @@ export default {
         a.el.style.setProperty('--d', `${i * 90}ms`);
         a.el.classList.add('happy');
       });
-      api.cheer(msg);
-      await sleep(1400);
+      // Wait for the cheer itself (the finish card speaks next), with a floor for the happy hop.
+      await Promise.all([cheer(msg), sleep(1200)]);
       if (!live(t) || demoMode) return;
       if (round >= TOTAL - 1) {
         api.finish();
@@ -528,8 +540,7 @@ export default {
     async function coverUp() {
       const t = tok;
       phase = 'busy';
-      api.cheer('Every chair has a star!');
-      await sleep(1300);
+      await Promise.all([cheer('Every chair has a star!'), sleep(1000)]);
       if (!live(t)) return;
       for (const st of stars) {
         if (!st.slot) continue;
@@ -541,26 +552,28 @@ export default {
       tray.hidden = true;
       cloth.classList.add('on');
       sfx('whoosh');
-      api.prompt('Whoosh! A cloth hides the chairs.');
-      await sleep(1900);
+      const whoosh = prompt('Whoosh! A cloth hides the chairs.');
+      await sleep(900); // the cloth lands
       if (!live(t)) return;
+      // The friends arrive (and can be moved) while the line finishes; the instruction follows it.
       waiting.hidden = false;
       animals = cfg.faces.map((f) => makeTok('animal', f[0], f[1], waiting));
       layout();
       phase = 'match';
-      api.prompt('Friends are here! Sit each friend on a star.');
+      await whoosh;
+      if (live(t) && phase === 'match') prompt('Friends are here! Sit each friend on a star.');
     }
     async function reveal(key) {
       const t = tok;
       phase = 'busy';
       locked = true;
-      api.prompt('Let us lift the cloth and look!');
-      await sleep(1000);
+      const lift = prompt('Let us lift the cloth and look!');
+      await sleep(900);
       if (!live(t)) return;
       cloth.classList.remove('on');
       slots.forEach((s) => s.el.classList.add('unmark'));
       sfx('whoosh');
-      await sleep(1300);
+      await Promise.all([lift, sleep(1100)]);
       if (!live(t)) return;
       markLeft(true);
       animals.forEach((a, i) => {
@@ -574,8 +587,7 @@ export default {
         await finishRound(msg, true);
         return;
       }
-      api.cheer(msg);
-      await sleep(2400);
+      await Promise.all([cheer(msg), sleep(1400)]);
       if (!live(t)) return;
       locked = false;
       animals.forEach((a) => a.el.classList.remove('happy'));
@@ -609,7 +621,7 @@ export default {
       layout();
       api.stage(round, TOTAL);
       phase = round >= 2 ? 'mark' : 'seat';
-      if (!quiet) api.prompt(PROMPTS[round]);
+      if (!quiet) prompt(PROMPTS[round]);
     }
 
     // ---------- watch demo ----------
@@ -633,7 +645,7 @@ export default {
           }
           if (!live(t)) return;
           evaluate();
-          await sleep(2600);
+          await settle(800);
         } else if (round === 1) {
           await narrate('Let us sit the friends down.', 900);
           for (let i = 0; i < m; i++) {
@@ -644,7 +656,7 @@ export default {
           }
           if (!live(t)) return;
           evaluate();
-          await sleep(2600);
+          await settle(600);
           if (!live(t)) return;
           const key = cfg.answer;
           optBtns[key].classList.add('glow');
@@ -655,10 +667,11 @@ export default {
           if (!live(t)) return;
           await choose(key, optBtns[key]);
           if (!live(t)) return;
-          await sleep(1200);
+          await settle(400);
+          if (!live(t)) return;
           if (key === 'more') {
             bringChair();
-            await sleep(900);
+            await settle(300);
             if (!live(t)) return;
             await seat(
               animals.find((a) => !a.slot),
@@ -669,7 +682,7 @@ export default {
             await removeSlot(slots.find((s) => !s.occ));
           }
           if (!live(t)) return;
-          await sleep(2200);
+          await settle(800);
         } else {
           await narrate('First, a star on every chair.', 1000);
           for (let i = 0; i < cfg.nC; i++) {
@@ -680,6 +693,8 @@ export default {
           evaluate();
           while (live(t) && phase !== 'match') await sleep(150);
           if (!live(t)) return;
+          await settle(300);
+          if (!live(t)) return;
           await narrate('Now match each friend with a star.', 1400);
           for (let i = 0; i < m; i++) {
             if (!live(t)) return;
@@ -689,7 +704,7 @@ export default {
           }
           if (!live(t)) return;
           evaluate();
-          await sleep(2200);
+          await settle(600);
           if (!live(t)) return;
           const key = cfg.answer,
             d = Math.abs(cfg.nA - cfg.nC);
@@ -709,36 +724,40 @@ export default {
           if (!live(t)) return;
           await choose(key, optBtns[key]);
           if (!live(t)) return;
-          await sleep(500);
+          await settle(400);
           if (round >= 3 && key === 'more') {
             while (live(t) && animals.some((a) => !a.slot)) {
               while (live(t) && phase !== 'fixAdd') await sleep(150);
               if (!live(t)) return;
+              await settle(300);
+              if (!live(t)) return;
               await narrate('Bring a chair for the standing friend.', 900);
               if (!live(t)) return;
               bringChair();
-              await sleep(800);
+              await settle(300);
               if (!live(t)) return;
               await seat(
                 animals.find((a) => !a.slot),
                 slots[slots.length - 1],
               );
               evaluate();
-              await sleep(700);
+              await settle(400);
             }
             if (!live(t)) return;
-            await sleep(1800);
+            await settle(800);
           } else if (round >= 3 && key === 'spare') {
             while (live(t) && slots.some((x) => !x.occ)) {
               while (live(t) && phase !== 'fixSpare') await sleep(150);
               if (!live(t)) return;
+              await settle(300);
+              if (!live(t)) return;
               await narrate('Put the empty chair away.', 900);
               if (!live(t)) return;
               await removeSlot(slots.find((x) => !x.occ));
-              await sleep(500);
+              await settle(400);
             }
             if (!live(t)) return;
-            await sleep(1800);
+            await settle(800);
           }
         }
       } finally {

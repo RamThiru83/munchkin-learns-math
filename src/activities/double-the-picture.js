@@ -287,6 +287,22 @@ function describe(v) {
 const kWord = (k) => (k === 2 ? 'twice' : k === 3 ? 'three times' : 'four times');
 const cap = (t) => t[0].toUpperCase() + t.slice(1);
 
+/** Every line this game can build from a vector (for the voice recordings; see docs/VOICE.md). */
+export const _voiceLines = (() => {
+  const out = new Set();
+  for (let x = -3; x <= 3; x++)
+    for (let y = -3; y <= 3; y++) {
+      if (!x && !y) continue;
+      out.add(`This line goes ${describe([x, y])}.`);
+      out.add(`The model goes ${describe([x, y])}.`);
+      for (const k of [2, 3, 4]) {
+        out.add(`You go ${describe([x * k, y * k])}!`);
+        out.add(`${cap(kWord(k))} as long: ${describe([x * k, y * k])}.`);
+      }
+    }
+  return [...out];
+})();
+
 // ---------- styles ----------
 const CSS = `
 .a-${ID}{width:100%;max-width:1100px;margin:0 auto;display:flex;flex-direction:column;align-items:center;gap:10px;padding:4px 8px 12px}
@@ -748,7 +764,7 @@ export default {
       if (!alive) return;
       await api.cheer(pick(k === 4 ? CHEERS4 : k === 3 ? CHEERS3 : CHEERS));
       if (!alive) return;
-      await sleep(1100);
+      await sleep(600); // a moment to see the finished picture, then the next round
     }
 
     // ----- demo -----
@@ -765,7 +781,7 @@ export default {
         await sleep(300);
         highlightModel([path[0][0], path[0][1]], [path[0][0], path[0][1]]);
         await api.say('We start at the green dot.');
-        if (!alive) return;
+        if (!alive || R !== keep) return;
         accept(path[0]);
         await sleep(500);
         for (let s = 1; s < path.length; s++) {

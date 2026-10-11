@@ -574,7 +574,7 @@ export default {
     function missMsg(c, r) {
       const rel = R.orient === 'v' ? c - M : r - M;
       if (rel === 0) return 'The mirror is in the middle. Try the other side.';
-      if (Math.sign(rel) === R.side) return 'That is the first side. Cross over the mirror!';
+      if (Math.sign(rel) === R.side) return 'The shape is on that side. Cross over the mirror!';
       const rem = R.verts.map((v, i) => (onMir(v) || R.placed.has(i) ? null : R.twins[i])).filter(Boolean);
       const along = R.orient === 'v' ? r : c;
       if (rem.some((t) => (R.orient === 'v' ? t.r : t.c) === along))
@@ -620,18 +620,22 @@ export default {
       }
     }
 
+    // Round end: the flip animation and the cheer run together, so the wait before the next round is short.
     async function complete() {
       const g = gen;
       busy = true;
       R.hint = false;
       drawGhost();
-      await sleep(350);
+      await sleep(150);
       if (!ok(g)) return;
-      const done = await flipAnim(g, 700);
-      if (!done) return;
-      api.cheer('A perfect mirror twin!');
       sfx('win');
-      await sleep(1700);
+      const line = 'A perfect mirror twin!';
+      const [done] = await Promise.all([
+        flipAnim(g, 400),
+        Promise.race([api.cheer(line), sleep(1500 + 90 * line.length)]),
+      ]);
+      if (!done || !ok(g)) return;
+      await sleep(400);
       if (!ok(g)) return;
       if (R.i < TOTAL - 1) startRound(R.i + 1);
       else api.finish();
@@ -701,7 +705,8 @@ export default {
         ring.remove();
         if (!talked) return;
         placePeg(i, true);
-        if (!(await talk('', 700))) return;
+        await sleep(700);
+        if (!ok(g)) return;
       }
       if (!(await talk('Same shape, flipped. A mirror twin!', 1800))) return;
       clearPlaced();

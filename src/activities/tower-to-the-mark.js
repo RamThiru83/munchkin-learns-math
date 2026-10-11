@@ -182,8 +182,12 @@ export default {
       }, ms);
       timers.add(t);
     };
-    // Speech may be off or never finish (headless): never wait longer than a length-based cap.
-    const capped = (p, text) => Promise.race([p, sleep(700 + text.length * 55)]);
+    // Speech may be off or never finish (headless): never wait longer than a generous length-based cap.
+    const capped = (p, text) => Promise.race([p, sleep(1500 + text.length * 90)]);
+    // The number spoken for the last block or clip the child placed; the game waits for it before speaking on.
+    let lastCount = Promise.resolve();
+    const countAloud = (n) => (lastCount = say(WORDS[n] || String(n)));
+    const afterCount = () => Promise.race([lastCount, sleep(1200)]);
     // talk() also lasts at least 450 ms so counting and the demo stay watchable with the voice off.
     const talk = (text) => Promise.all([capped(say(text), text), sleep(450)]);
     const glow = (el) => {
@@ -276,7 +280,7 @@ export default {
       blk.addEventListener('click', () => removeBlock(T, blk));
       T.wall.append(blk);
       T.count += 1;
-      if (!demo) say(WORDS[T.count] || String(T.count));
+      if (!demo) countAloud(T.count);
       // Every line is a whole number of blocks, so the tower can never pass it: it stops exactly there.
       if (T.count * T.unit === T.mark) {
         T.done = true;
@@ -294,8 +298,10 @@ export default {
       api.prompt('Off it comes. Is it at the line now?');
     }
     async function towerReached() {
-      if (!towers.every((T) => T.done)) return api.cheer('It reaches the line! Now the other one.');
       const ep = epoch;
+      await afterCount(); // let the last number finish before the next line
+      if (!alive || ep !== epoch) return;
+      if (!towers.every((T) => T.done)) return api.cheer('It reaches the line! Now the other one.');
       if (round === 0) {
         await ask(
           'How many blocks tall is the tower?',
@@ -413,7 +419,7 @@ export default {
       L.used += L.size;
       misses = 0;
       const n = L.used / L.size;
-      if (!demo) say(WORDS[n] || String(n));
+      if (!demo) countAloud(n);
       if (L.used === L.len) {
         L.done = true;
         if (P.kind !== 'clips' || round === 3) L.count.textContent = `= ${n} ${L.size === 2 ? 'big' : 'small'} clips`;
@@ -421,9 +427,11 @@ export default {
       }
     }
     async function clipsDone() {
-      if (!lanes.every((L) => L.done)) return api.cheer('All the way! Now the other ribbon.');
       const ep = epoch;
-      const go = () => ep === epoch;
+      const go = () => alive && ep === epoch;
+      await afterCount(); // let the last number finish before the next line
+      if (!go()) return;
+      if (!lanes.every((L) => L.done)) return api.cheer('All the way! Now the other ribbon.');
       if (round === 2) {
         const n = lanes[0].len;
         await ask('How many clips long is the ribbon?', chipRange(n), n, {}, 'Count the clips again.');
@@ -517,7 +525,15 @@ export default {
     async function choose(L, btn) {
       if (busy || demoOn) return;
       if (L.len !== P.target) {
-        miss(`Not that one. Find ${P.target} small clips.`, board.querySelector(`.pick[data-len="${P.target}"]`));
+        misses += 1;
+        if (misses >= 2) glow(board.querySelector(`.pick[data-len="${P.target}"]`));
+        // Say the hint in full, then count the clips along that ribbon so she can see its length.
+        busy = true;
+        const ep = epoch;
+        const hint = `Not that one. Find ${P.target} small clips.`;
+        await capped(api.nudge(hint), hint);
+        if (!alive || ep !== epoch) return;
+        busy = false;
         return measureAll(L);
       }
       busy = true;
@@ -550,7 +566,7 @@ export default {
     }
     async function nextRound() {
       const ep = epoch;
-      await sleep(900);
+      await sleep(500);
       if (!alive || ep !== epoch) return;
       if (round < N - 1) setupRound(round + 1);
       else api.finish();

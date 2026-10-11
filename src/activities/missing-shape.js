@@ -406,9 +406,10 @@ export default {
         solved = true;
         sfx('good');
         fillHole(btn);
-        await Promise.race([Promise.resolve(api.cheer(`${pick(CHEER_OPEN)} ${ruleText()}`)), sleep(5000)]);
+        const line = `${pick(CHEER_OPEN)} ${ruleText()}`;
+        await Promise.race([Promise.resolve(api.cheer(line)), sleep(1500 + line.length * 90)]);
         if (!live(t)) return;
-        await sleep(700);
+        await sleep(500);
         if (!live(t)) return;
         if (round < TOTAL - 1) setup(round + 1);
         else api.finish();
