@@ -40,10 +40,11 @@ test(`playthrough: ${ID}`, async ({ page }, testInfo) => {
     await expect(chip).toBeVisible();
     await chip.click();
 
-    if (r < ROUNDS - 1) await expect.poll(() => currentDot(page), { timeout: 40_000 }).toBe(r + 1);
+    // After the right answer the game replays the unluckiest grabs (up to 7 in round 5, ~30 s with the voice on).
+    if (r < ROUNDS - 1) await expect.poll(() => currentDot(page), { timeout: 90_000 }).toBe(r + 1);
   }
 
-  await expect(page.locator('.overlay')).toBeVisible({ timeout: 40_000 });
+  await expect(page.locator('.overlay')).toBeVisible({ timeout: 90_000 });
   expect(await page.evaluate((id) => JSON.parse(localStorage.getItem('nilaa:resume') || '{}')[id], ID)).toBeUndefined();
   expect(errors).toEqual([]);
 });

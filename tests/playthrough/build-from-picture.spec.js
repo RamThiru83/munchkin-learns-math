@@ -101,9 +101,18 @@ test(`playthrough: ${ID}`, async ({ page }, testInfo) => {
           { message: `round ${r + 1}: piece ${g.pid} did not snap` },
         )
         .toBe(true);
+      // The won class is set in the same tick as the last snap, and the game moves on by itself
+      // (WIN_SHOW + cheer + WIN_PAUSE), so check it straight away rather than after a settle wait.
+      const full = await page.evaluate(() => {
+        const s = document.querySelector('.a-build-from-picture').__bfp.st;
+        return s.occ.size === s.T.size;
+      });
+      if (full) {
+        await expect(won, `round ${r + 1}: board full but not won`).toHaveCount(1, { timeout: 1_000 });
+        break;
+      }
       await page.waitForTimeout(300); // snap animation
     }
-    await expect(won).toHaveCount(1, { timeout: 10_000 });
   }
 
   await expect(page.locator('.overlay')).toBeVisible({ timeout: 30_000 });
