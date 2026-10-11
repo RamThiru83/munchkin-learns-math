@@ -10,6 +10,15 @@
  * Sentence rules are shared with the pack tools: keep sentences()/keyOf() in step with scripts/voice/text.mjs.
  */
 import { settings, setVoiceFlag } from './settings.js';
+import { unlockAudio } from './audio.js';
+
+// The automated tests set this flag so that, with the voice off, lines do not take reading time.
+let FAST_TESTS = false;
+try {
+  FAST_TESTS = localStorage.getItem('nilaa:fasttests') === '1';
+} catch {
+  /* no storage */
+}
 
 const EMOJI = /[\u{1F300}-\u{1FAFF}\u2600-\u27BF]|\uFE0F|\u200D/gu;
 function sentences(text) {
@@ -53,16 +62,16 @@ export function loadVoicePack(name) {
   return packs.get(name);
 }
 
+/** The page's one AudioContext (shared with the sound effects). */
 function audio() {
   if (ctx) return ctx;
-  const AC = typeof window !== 'undefined' && (window.AudioContext || window.webkitAudioContext);
-  if (!AC) return null;
-  try {
-    ctx = new AC();
-  } catch {
-    ctx = null;
-  }
+  ctx = unlockAudio() || null;
   return ctx;
+}
+
+/** Resolves when a pack has loaded, or after `ms` at the latest (the site works either way). */
+export function voiceReady(packPromise, ms) {
+  return Promise.race([packPromise, new Promise((r) => setTimeout(r, ms))]);
 }
 // Browsers only allow sound after a tap: wake the audio context on the first one.
 if (typeof window !== 'undefined') {
@@ -73,8 +82,7 @@ if (typeof window !== 'undefined') {
     } catch {
       /* ignore */
     }
-    const c = audio();
-    if (c && c.state === 'suspended') c.resume().catch(() => {});
+    audio();
   };
   window.addEventListener('pointerdown', unlock, { capture: true });
   window.addEventListener('keydown', unlock, { capture: true });
@@ -128,13 +136,15 @@ function playBuffer(buf, my) {
   });
 }
 
-async function sayRecorded(keys, my) {
+async function sayRecorded(keys, my, e) {
   const c = audio();
   if (c.state === 'suspended') {
     await Promise.race([c.resume().catch(() => {}), new Promise((r) => setTimeout(r, 300))]);
     if (c.state !== 'running') return false;
   }
   const bufs = await Promise.all(keys.map(decode));
+  e.dur = bufs.reduce((a, b) => a + b.duration, 0) + 0.12 * (bufs.length - 1);
+  e.start = performance.now();
   for (let i = 0; i < bufs.length; i++) {
     if (my !== token) return true;
     if (i) await new Promise((r) => setTimeout(r, 120));
@@ -212,20 +222,44 @@ const mark = (v) => {
   if (typeof document !== 'undefined') document.documentElement.dataset.voice = v;
 };
 
-// Returns a promise that resolves when speech ends (or immediately when voice is off).
+/** Troubleshooting log of the last lines (open the site with ?voicelog and read window.__voiceLog). */
+const log = [];
+if (typeof window !== 'undefined' && /voicelog/.test(location.search)) window.__voiceLog = log;
+const note = (e) => {
+  if (!window.__voiceLog) return;
+  log.push(e);
+  if (log.length > 400) log.shift();
+};
+
+// Returns a promise that resolves when speech ends (or after a reading pause when voice is off).
 export async function say(text, { cancel = true } = {}) {
-  if (!settings.voice || !text) return;
+  if (!text) return;
+  if (!settings.voice) {
+    // Voice off: the grown-up reads the banner, so give the line its reading time (games pace on this promise).
+    if (cancel) stopSpeaking();
+    const my = token;
+    const ms = FAST_TESTS ? 40 : Math.min(2000, 250 + 30 * String(text).length);
+    for (let t = 0; t < ms && my === token; t += 100) await new Promise((r) => setTimeout(r, 100));
+    return;
+  }
   if (cancel) stopSpeaking(); // cancel: false lets a line overlap the one already playing
   const my = token;
-  // A game's pack may still be arriving when its first line is spoken: wait for it briefly.
-  const pending = [...packs.values()];
-  if (pending.length) await Promise.race([Promise.all(pending), new Promise((r) => setTimeout(r, 1500))]);
-  if (my !== token) return;
+  const e = { t: String(text), req: performance.now(), start: 0, end: 0, src: '', cut: false, dur: 0 };
+  note(e);
+  try {
+    await say2(text, my, e);
+  } finally {
+    e.end = performance.now();
+    e.cut = my !== token;
+  }
+}
+async function say2(text, my, e) {
   const keys = sentences(text).map(keyOf);
   if (keys.length && keys.every((k) => clips.has(k)) && audio()) {
     try {
-      if (await sayRecorded(keys, my)) {
+      if (await sayRecorded(keys, my, e)) {
         mark('recorded');
+        e.src = 'recorded';
         return;
       }
     } catch {
@@ -234,6 +268,8 @@ export async function say(text, { cancel = true } = {}) {
   }
   if (my !== token) return;
   mark('browser');
+  e.src = 'browser';
+  e.start = performance.now();
   await sayBrowser(text);
 }
 
