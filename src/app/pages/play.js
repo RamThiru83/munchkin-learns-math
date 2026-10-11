@@ -10,7 +10,7 @@ import { ACTIVITIES } from '../../content/registry.js';
 import { loaders } from '../../activities/index.js';
 import { awardStars, savedRound, saveRound, clearRound } from '../progress.js';
 import { owl, toggle, roundDots } from '../ui.js';
-import { loadVoicePack } from '../../lib/speech.js';
+import { loadVoicePack, voiceReady } from '../../lib/speech.js';
 
 const { h, say, sfx, confetti, settings, setVoiceOn, stopSpeaking } = core;
 
@@ -28,7 +28,7 @@ export function renderPlay(app, id) {
     return { destroy() {} };
   }
   loadVoicePack('app');
-  loadVoicePack(id);
+  const packReady = loadVoicePack(id);
   app.className = `page-play lv${meta.level}`;
 
   // ---- frame ----
@@ -153,13 +153,27 @@ export function renderPlay(app, id) {
 
     let mod;
     try {
-      mod = (await loaders[id]()).default;
+      // Load the game and its recorded voice together, so the first line is spoken by the recorded
+      // voice (the pack wait is capped: on a slow connection the game starts anyway and early lines
+      // use the browser voice until the pack arrives).
+      const gen = generation;
+      const slow = setTimeout(() => {
+        if (gen === generation && !bannerText.textContent) bannerText.textContent = 'Getting ready…';
+      }, 600);
+      const [loaded] = await Promise.all([loaders[id](), voiceReady(packReady, 6000)]);
+      clearTimeout(slow);
+      if (gen !== generation) return;
+      if (bannerText.textContent === 'Getting ready…') bannerText.textContent = '';
+      mod = loaded.default;
     } catch (e) {
       console.error(e);
       stage.append(h('p', { class: 'err' }, 'This game is still being made. Please come back soon!'));
       return;
     }
     setTalk(mod.talkPrompts);
+    // While the child plays, fetch the next game's voice so it starts without a wait.
+    const after = ACTIVITIES[ACTIVITIES.indexOf(meta) + 1];
+    if (after) setTimeout(() => loadVoicePack(after.id), 4000);
 
     /** The api object every game receives. See docs/GAME-CONTRACT.md. */
     const api = {

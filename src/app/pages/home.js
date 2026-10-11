@@ -4,10 +4,16 @@ import { LEVELS, ACTIVITIES } from '../../content/registry.js';
 import { BOOK } from '../../content/book.js';
 import { starsFor, totalStars, finishedCount, savedRound } from '../progress.js';
 import { owl, toggle, bookCitation } from '../ui.js';
+import { loadVoicePack } from '../../lib/speech.js';
 
 export function renderHome(app) {
   app.className = 'page-home';
   const next = ACTIVITIES.find((a) => !starsFor(a.id)) || null;
+  // Fetch the voice for the app and the game the child will most likely open next.
+  loadVoicePack('app');
+  const inProgress = ACTIVITIES.find((a) => savedRound(a.id));
+  if (inProgress) loadVoicePack(inProgress.id);
+  else if (next) loadVoicePack(next.id);
   const header = h(
     'header',
     { class: 'hero' },
