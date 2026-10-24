@@ -11,7 +11,7 @@ test('v1 saved data (no schema key) is kept and upgraded', async ({ page }) => {
   await page.reload();
   await expect(page.locator('.count')).toContainText('6 stars · 2 of');
   await expect(page.locator('a[href="#/play/same-or-more"]')).toHaveClass(/done/);
-  await expect(page.locator('a[href="#/play/dice-race"] .resume-tag')).toHaveText('▶ Round 4 of 5');
+  await expect(page.locator('a[href="#/play/dice-race"] .resume-tag')).toHaveText('Round 4 of 5');
   const schema = await page.evaluate(() => localStorage.getItem('nilaa:schema'));
   expect(Number(schema)).toBeGreaterThanOrEqual(2);
 });

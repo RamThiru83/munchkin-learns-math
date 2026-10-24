@@ -29,7 +29,10 @@ test('home and grown-ups pages render', async ({ page }) => {
   await page.goto('./#/grownups');
   await expect(page.locator('.agecard')).toHaveCount(5);
   await expect(page.locator('.note')).toHaveCount(ACTIVITIES.length);
+  // References are folded away (decision 0009); opening them shows the list.
+  await page.locator('#age-refs summary').click();
   await expect(page.locator('.refs li').first()).toBeVisible();
+  await expect(page.locator('.refs li')).toHaveCount(35);
   await expectNoHorizontalScroll(page);
   expect(errors).toEqual([]);
 });

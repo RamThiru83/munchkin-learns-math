@@ -35,7 +35,7 @@ for (const { id, rounds } of games) {
 test('home tile shows the saved round and Again keeps it', async ({ page }) => {
   await openWithSavedRound(page, 'dice-race', 2, 5);
   await page.goto('./#/');
-  await expect(page.locator('a[href="#/play/dice-race"] .resume-tag')).toHaveText('▶ Round 3 of 5');
+  await expect(page.locator('a[href="#/play/dice-race"] .resume-tag')).toHaveText('Round 3 of 5');
   await page.click('a[href="#/play/dice-race"]');
   await page.click('[data-resume=continue]');
   await expect.poll(() => currentDot(page)).toBe(2);
