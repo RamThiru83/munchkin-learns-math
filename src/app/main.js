@@ -30,7 +30,7 @@ function route() {
   teardown();
   if (hash.startsWith('#/play/')) current = renderPlay(app, decodeURIComponent(hash.slice('#/play/'.length)));
   else if (hash === '#/grownups') renderGrownups(app);
-  else renderHome(app);
+  else current = renderHome(app);
 }
 
 window.addEventListener('hashchange', route);
