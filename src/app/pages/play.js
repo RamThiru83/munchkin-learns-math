@@ -1,7 +1,7 @@
 /**
  * Play page: the frame around one game. Route: #/play/<id>
  *
- * Builds the top bar (Map, title, Watch, Again, Voice), the owl banner, the stage the
+ * Builds the top bar (Home, title, Watch, Talk, Again, Voice; each a picture with a word), the owl banner, the stage the
  * game draws into, and the progress dots. Loads the game module and gives it the `api`
  * object described in docs/GAME-CONTRACT.md.
  */
@@ -10,6 +10,8 @@ import { ACTIVITIES } from '../../content/registry.js';
 import { loaders } from '../../activities/index.js';
 import { awardStars, savedRound, saveRound, clearRound } from '../progress.js';
 import { owl, toggle, roundDots } from '../ui.js';
+import { starRow, icon } from '../glyphs.js';
+import { gamePicture } from './home.js';
 import { loadVoicePack, voiceReady } from '../../lib/speech.js';
 
 const { h, say, sfx, confetti, settings, setVoiceOn, stopSpeaking } = core;
@@ -38,27 +40,27 @@ export function renderPlay(app, id) {
     { class: 'banner', 'aria-live': 'polite' },
     h('div', { class: 'banner-owl' }, owl(48)),
     bannerText,
-    h(
-      'button',
-      {
-        class: 'icon-btn',
-        title: 'Hear it again',
-        'aria-label': 'Hear it again',
-        onclick: () => say(bannerText.textContent),
-      },
-      '🔈',
-    ),
+    h('button', {
+      class: 'icon-btn',
+      title: 'Hear it again',
+      'aria-label': 'Hear it again',
+      onclick: () => say(bannerText.textContent),
+      html: '<svg viewBox="0 0 24 24" width="28" height="28" aria-hidden="true"><path d="M4 9h4l5-4v14l-5-4H4z" fill="currentColor"/><path d="M16.5 8.5a5 5 0 0 1 0 7M19 6a8.5 8.5 0 0 1 0 12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>',
+    }),
   );
   const dots = h('div', { class: 'dots' });
-  const stage = h('div', { class: 'stage' });
-  const watchBtn = h('button', { class: 'btn small watch', hidden: true }, '👀 Watch');
-  const againBtn = h('button', { class: 'btn small', title: 'Start this round again' }, '↻ Again');
+  const stage = h('main', { class: 'stage', id: 'main' });
+  /** A frame button: picture above (or beside) a short word, at least 56px tall. */
+  const tool = (cls, pic, word, attrs = {}) =>
+    h('button', { class: `pill ${cls}`, type: 'button', ...attrs }, icon(pic), h('span', { class: 'lbl' }, word));
+  const watchBtn = tool('watch', 'eye', 'Watch', { hidden: true, title: 'Watch how to play' });
+  const againBtn = tool('again', 'again', 'Again', { title: 'Start this round again' });
   // "Talk together": short questions for the grown-up (from the game's talkPrompts or api.setTalk).
-  const talkBtn = h(
-    'button',
-    { class: 'btn small talk-btn', hidden: true, 'aria-expanded': 'false', title: 'Questions to ask together' },
-    '💬 Talk',
-  );
+  const talkBtn = tool('talk-btn', 'talk', 'Talk', {
+    hidden: true,
+    'aria-expanded': 'false',
+    title: 'Questions to ask together',
+  });
   const talkList = h('ul', {});
   const talkPanel = h(
     'aside',
@@ -67,14 +69,18 @@ export function renderPlay(app, id) {
     talkList,
   );
   const bar = h(
-    'div',
+    'header',
     { class: 'bar' },
-    h('a', { class: 'btn small', href: '#/' }, '← Map'),
-    h('div', { class: 'bar-title' }, `${meta.emoji} ${meta.title}`),
-    watchBtn,
-    talkBtn,
-    againBtn,
-    toggle('🗣️', 'Voice', () => settings.voice, setVoiceOn),
+    h('a', { class: 'pill back', href: '#/' }, icon('home'), h('span', { class: 'lbl' }, 'Home')),
+    h('h1', { class: 'bar-title' }, meta.title),
+    h(
+      'div',
+      { class: 'bar-tools' },
+      watchBtn,
+      talkBtn,
+      againBtn,
+      toggle('Voice', () => settings.voice, setVoiceOn, 'pill', ['voice', 'voiceOff']),
+    ),
   );
   app.append(bar, banner, talkPanel, stage, dots);
 
@@ -239,32 +245,45 @@ export function renderPlay(app, id) {
       { class: 'overlay' },
       h(
         'div',
-        { class: 'card' },
+        { class: 'card', role: 'dialog', 'aria-modal': 'true', 'aria-labelledby': 'done-h' },
         owl(80),
-        h('h2', {}, 'Hooray! You did it!'),
-        h('div', { class: 'bigstars' }, '⭐'.repeat(STARS_FOR_FINISHING)),
+        h('h2', { id: 'done-h' }, 'Hooray! You did it!'),
+        h('div', { class: 'bigstars' }, starRow(STARS_FOR_FINISHING, STARS_FOR_FINISHING, 44)),
+        nextAct
+          ? h(
+              'a',
+              { class: 'next-game', href: `#/play/${nextAct.id}` },
+              h('img', { src: gamePicture(nextAct.id), alt: '', width: 480, height: 360 }),
+              h(
+                'span',
+                { class: 'next-words' },
+                h('span', { class: 'next-kicker' }, icon('play', 22), 'Next game'),
+                h('strong', {}, nextAct.title),
+              ),
+            )
+          : h('a', { class: 'pill primary', href: '#/' }, icon('home'), 'All 30 games done! Home'),
         h(
           'div',
           { class: 'row' },
           h(
             'button',
             {
-              class: 'btn',
+              class: 'pill',
+              type: 'button',
               onclick: () => {
                 overlay.remove();
                 mount(0);
               },
             },
-            '↻ Play again',
+            icon('again'),
+            'Play again',
           ),
-          nextAct
-            ? h('a', { class: 'btn primary', href: `#/play/${nextAct.id}` }, `Next: ${nextAct.title} →`)
-            : h('a', { class: 'btn primary', href: '#/' }, 'Back to the map'),
-          h('a', { class: 'btn', href: '#/' }, 'Map'),
+          h('a', { class: 'pill', href: '#/' }, icon('home'), 'Home'),
         ),
       ),
     );
     app.append(overlay);
+    overlay.querySelector('a, button')?.focus({ preventScroll: true });
     say('Hooray! You did it!');
   }
 
@@ -285,19 +304,20 @@ export function renderPlay(app, id) {
           h(
             'button',
             {
-              class: 'btn primary',
+              class: 'pill primary',
               'data-resume': 'continue',
               onclick: () => {
                 sfx('pop');
                 mount(saved.r);
               },
             },
-            `▶ Carry on from round ${saved.r + 1}`,
+            icon('play'),
+            `Carry on from round ${saved.r + 1}`,
           ),
           h(
             'button',
             {
-              class: 'btn',
+              class: 'pill',
               'data-resume': 'restart',
               onclick: () => {
                 sfx('tap');
@@ -305,7 +325,8 @@ export function renderPlay(app, id) {
                 mount(0);
               },
             },
-            '↻ Start from round 1',
+            icon('again'),
+            'Start from round 1',
           ),
         ),
       ),
