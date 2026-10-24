@@ -3,11 +3,13 @@
 //  - each game module follows the contract (docs/GAME-CONTRACT.md)
 //  - src/activities/index.js is up to date
 //  - levels, age guide and citations line up
+//  - every game has its picture for the home page (img/games/<id>.webp and <id>-l.webp, decision 0008)
 import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { LEVELS, ACTIVITIES } from '../src/content/registry.js';
 import { AGE_LEVELS, AGE_REFS, AGE_INTRO, AGE_CAVEAT } from '../src/content/age-guide.js';
 import { generateIndex } from './gen-index.mjs';
+import { GISTS } from '../src/content/gists.js';
 
 const dir = fileURLToPath(new URL('../src/activities/', import.meta.url));
 const problems = [];
@@ -80,6 +82,8 @@ for (const id of ids) {
   if (!Number.isInteger(mod.rounds) || mod.rounds < 1) fail(`${id}: "rounds" must be a positive whole number`);
   if (typeof mod.parentNote !== 'string' || mod.parentNote.length < 40)
     fail(`${id}: parentNote is missing or too short`);
+  if (!Array.isArray(GISTS[id]) || GISTS[id].length !== 2)
+    fail(`${id}: add a one-line summary and question to src/content/gists.js`);
   const talk = mod.talkPrompts;
   if (talk !== undefined && !(Array.isArray(talk) && talk.every((q) => typeof q === 'string' && q.length > 5)))
     fail(`${id}: talkPrompts must be an array of short questions`);
@@ -106,6 +110,11 @@ for (const t of texts)
   for (const m of t.matchAll(/\[(\d+(?:,\s*\d+)*)\]/g))
     for (const n of m[1].split(/,\s*/).map(Number))
       if (n < 1 || n > AGE_REFS.length) fail(`age guide cites [${n}] but there are ${AGE_REFS.length} references`);
+
+// ---- home-page pictures (decision 0008) ----
+for (const id of ids)
+  for (const f of [`img/games/${id}.webp`, `img/games/${id}-l.webp`])
+    if (!existsSync(f)) fail(`${f} is missing: run scripts/shots.mjs ${id} and scripts/shots-small.py`);
 
 // ---- recorded voice packs (docs/VOICE.md) ----
 let voiceNote = 'no voice packs';
