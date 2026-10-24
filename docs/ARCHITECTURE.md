@@ -7,7 +7,7 @@ A static site with no runtime dependencies: plain JavaScript modules, a hash rou
 ```
 index.html (built)  or  src/index.html (dev)
   └─ src/app/main.js           hash router: #/ · #/play/<id> · #/grownups
-       ├─ pages/home.js        map of levels and tiles (reads content/registry.js, app/progress.js)
+       ├─ pages/home.js        five colour chapters with game pictures (reads content/registry.js, app/progress.js, img/games/)
        ├─ pages/play.js        frame around one game: bar, owl banner, stage, dots
        │     └─ activities/index.js → activities/<id>.js   (lazy import; bundled in the build)
        └─ pages/grownups.js    tips, age guide (content/age-guide.js), each game's parentNote, references
