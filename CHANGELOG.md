@@ -2,6 +2,20 @@
 
 Versions follow [semantic versioning](https://semver.org/): patch = fixes, minor = new games or features, major = changes to saved data or the game contract.
 
+## 1.7.0 — 2026-10-24
+
+A new look for everything around the games, made for the child who plays (decisions 0008 and 0009); the games themselves are unchanged.
+
+- **Home, pictures first:** the first screen is one big picture of the game to play next with a pulsing play button (or "Carry on" with the round reached), her stars and games played below. "Pick a level" shows five large picture buttons (seed, sprout, bud, blossom, fruit). Each level is a full-colour chapter; every game tile leads with a picture of its real first round, its name and its stars.
+- **Level bar:** the five levels stay at the top while scrolling, each with its drawing, and take the colour of the level on screen.
+- **Game frame:** the game's name is the page heading; picture-and-word buttons at least 56px tall (Home, Watch, Talk, Again, Voice on/off); a larger "Hear it again" button; calmer banner and progress dots.
+- **Finish card:** the next game's picture is the main button, with Play again and Home below. The welcome-back card's buttons have pictures too.
+- **Grown-up controls are quiet:** Voice, Sound and the grown-ups guide are small icon buttons in the top corner (and in the footer).
+- **Type:** Andika, a typeface made for beginning readers (single-storey a and g), embedded; sentence case everywhere; body text 18–20px.
+- **Accessibility:** one heading and main landmark per page, focus moves to the chapter or the finish card, screen-reader names on every button; automated WCAG 2.1 AA check passes with no issues.
+- **Grown-ups page, short:** four tips, the five age bands in one row of cards, and each game in one line with one question to ask. The full notes, the research behind the ages and the references open under "More". The grown-ups block on the home page is two sentences.
+- Maintenance: `scripts/shots.mjs` and `scripts/shots-small.py` make the game pictures in `img/games/`.
+
 ## 1.6.1 — 2026-10-11
 
 Audit of all 30 games after the recorded voice went live (lags, voice skips, incoherent lines):

@@ -6,3 +6,5 @@ playwright-report/
 voice-todo.json
 voice-logs/
 voice_clips*.zip
+.taste-skill/
+img/games/raw/
