@@ -11,3 +11,5 @@ Short notes on choices that a future maintainer might otherwise undo by accident
 | [0005](0005-game-contract.md) | One file per game behind a small `api` contract |
 | [0006](0006-node-toolchain.md) | Node-only tooling: esbuild, ESLint, Prettier, Playwright |
 | [0007](0007-recorded-voice.md) | Recorded Chirp 3 HD voice in per-game packs; browser speech as fallback |
+| [0008](0008-colour-chapters.md) | The frame's look: five colour chapters named after the growing stages, real game pictures, type |
+| [0009](0009-made-for-children.md) | Made for the child: pictures first, Andika type for beginning readers, 56px+ icon-and-word buttons, quiet grown-up controls |
