@@ -1,6 +1,8 @@
 /* Shared building blocks games may use: .act-row .chip .choice .shake .hop .glow .dragging */
 .dragging {
-  filter: drop-shadow(0 8px 6px rgba(0, 0, 0, 0.25));
+  filter: drop-shadow(
+    0 8px 6px rgba(0, 0, 0, 0.25)
+  ); /* taste-skill-ignore: inside the games, which keep their own look */
 }
 .act-row {
   display: flex;
@@ -18,7 +20,7 @@
   border-radius: 18px;
   background: #fff;
   font-size: 2rem;
-  box-shadow: 0 3px 0 rgba(43, 45, 66, 0.15);
+  box-shadow: 0 3px 0 rgba(43, 45, 66, 0.15); /* taste-skill-ignore: inside the games, which keep their own look */
   cursor: pointer;
   user-select: none;
 }
@@ -50,5 +52,5 @@
   }
 }
 .glow {
-  box-shadow: 0 0 0 5px rgba(255, 209, 102, 0.9);
+  box-shadow: 0 0 0 5px rgba(255, 209, 102, 0.9); /* taste-skill-ignore: inside the games, which keep their own look */
 }

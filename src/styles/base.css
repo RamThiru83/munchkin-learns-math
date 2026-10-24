@@ -26,7 +26,7 @@ body {
   -webkit-tap-highlight-color: transparent;
 }
 body {
-  min-height: 100vh;
+  min-height: 100svh;
   font-size: 18px;
   line-height: 1.35;
   overscroll-behavior: none;
@@ -54,13 +54,13 @@ button {
   font-weight: 800;
   text-decoration: none;
   cursor: pointer;
-  box-shadow: 0 4px 0 rgba(43, 45, 66, 0.18);
+  box-shadow: 0 4px 0 rgba(43, 45, 66, 0.18); /* taste-skill-ignore: inside the games, which keep their own look */
   min-height: 48px;
   transition: transform 0.08s;
 }
 .btn:active {
   transform: translateY(3px);
-  box-shadow: none;
+  box-shadow: none; /* taste-skill-ignore: inside the games, which keep their own look */
 }
 .btn.primary {
   background: var(--green);

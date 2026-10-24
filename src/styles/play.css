@@ -6,40 +6,69 @@
   overflow: hidden;
   background: var(--bg);
 }
-.bar {
+.page-play .bar {
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 8px 12px;
-  border-bottom: 3px solid var(--ink);
-  background: #fff;
+  padding: 10px clamp(10px, 2vw, 24px);
+  background: var(--lv, var(--c-lv1));
   flex-wrap: wrap;
+  font-family: var(--f);
 }
 .bar-title {
-  font-weight: 900;
-  font-size: 1.1rem;
+  margin: 0 0 0 8px;
+  color: var(--c-ink);
+  font-family: var(--f);
+  font-weight: 700;
+  font-size: clamp(1.3rem, 1rem + 1.2vw, 1.9rem);
+  line-height: 1.05;
   flex: 1;
   min-width: 140px;
 }
+.bar-tools {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.page-play .bar .pill {
+  min-height: 60px;
+  padding: 0 18px 0 14px;
+}
+.page-play .bar .pill[aria-pressed='false'] {
+  color: #5a5348;
+}
+.page-play .pill .pic {
+  display: block;
+}
+.page-play .pill.back {
+  background: var(--c-ink);
+  color: var(--c-paper);
+}
+.page-play .pill.back:hover {
+  background: #2a2a2a;
+}
 .banner {
+  color: var(--c-ink);
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 8px 14px;
-  background: #fffbe8;
-  border-bottom: 3px solid var(--ink);
-  font-weight: 800;
-  font-size: clamp(1rem, 2.6vw, 1.35rem);
-  min-height: 62px;
+  gap: 12px;
+  padding: 8px clamp(10px, 2vw, 24px);
+  background: var(--c-paper);
+  font-family: var(--f);
+  font-weight: 700;
+  font-size: clamp(1.0625rem, 0.9rem + 1vw, 1.5rem);
+  line-height: 1.25;
+  min-height: 64px;
+  transition: background-color 0.25s;
 }
 .banner span {
   flex: 1;
 }
 .banner.good {
-  background: #d9fbe9;
+  background: var(--c-lv2);
 }
 .banner.try {
-  background: #ffe9ef;
+  background: var(--c-lv3);
 }
 .banner.pulse {
   animation: pulse 0.6s;
@@ -48,6 +77,17 @@
   40% {
     transform: scale(1.015);
   }
+}
+.banner .icon-btn {
+  min-width: 56px;
+  min-height: 56px;
+  display: grid;
+  place-items: center;
+  border-radius: 999px;
+  color: var(--c-ink);
+}
+.banner .icon-btn:hover {
+  background: rgba(10, 10, 10, 0.07);
 }
 .stage {
   position: relative;
@@ -65,44 +105,47 @@
 }
 .dots {
   display: flex;
-  gap: 8px;
+  gap: 10px;
   justify-content: center;
-  padding: 6px;
-  background: #fff;
-  border-top: 3px solid var(--ink);
+  padding: 10px;
+  background: var(--c-paper);
 }
 .dot {
   width: 16px;
   height: 16px;
   border-radius: 50%;
-  border: 3px solid var(--ink);
-  background: #fff;
+  border: 2px solid var(--c-ink);
+  background: var(--c-paper);
+  transition: transform 0.2s var(--ease, ease);
 }
 .dot.full {
-  background: var(--green);
+  background: var(--c-ink);
 }
 .dot.now {
-  background: var(--yellow);
+  background: var(--c-accent);
+  border-color: var(--c-accent);
+  transform: scale(1.25);
 }
 .err {
-  font-weight: 800;
+  font-weight: 700;
   padding: 2rem;
   text-align: center;
 }
 .overlay {
   position: fixed;
   inset: 0;
-  background: rgba(43, 45, 66, 0.55);
+  background: rgba(10, 10, 10, 0.6);
   display: grid;
   place-items: center;
   z-index: 50;
   padding: 16px;
 }
 .overlay .card {
-  background: #fff;
-  border: 4px solid var(--ink);
-  border-radius: 30px;
-  padding: 22px;
+  color: var(--c-ink);
+  background: var(--lv, var(--c-lv1));
+  border-radius: var(--radius);
+  padding: 32px 28px;
+  font-family: var(--f);
   text-align: center;
   max-width: 460px;
   display: flex;
@@ -118,8 +161,76 @@
   justify-content: center;
   margin-top: 8px;
 }
+.overlay h2,
+.resume-card h2 {
+  font-family: var(--f);
+  font-weight: 700;
+  line-height: 1;
+  font-size: clamp(2rem, 1.4rem + 3vw, 3.25rem);
+  margin: 8px 0;
+}
 .bigstars {
-  font-size: 2.4rem;
+  color: var(--c-ink);
+  margin-bottom: 8px;
+}
+.pill.primary {
+  background: var(--c-accent);
+}
+.pill.primary:hover {
+  background: #ff6be3;
+}
+.overlay .pill,
+.resume-card .pill {
+  min-height: 64px;
+  font-size: var(--s-body);
+  padding: 0 24px 0 18px;
+}
+/* The next game, as its picture: the biggest thing to tap on the finish card. */
+.next-game {
+  display: grid;
+  grid-template-columns: 160px minmax(0, 1fr);
+  align-items: center;
+  gap: 16px;
+  width: 100%;
+  margin: 6px 0 4px;
+  padding: 10px 18px 10px 10px;
+  box-sizing: border-box;
+  border-radius: 20px;
+  background: var(--c-accent);
+  color: var(--c-ink);
+  text-decoration: none;
+  text-align: left;
+  transition: transform 0.15s var(--ease);
+}
+.next-game:hover {
+  transform: translateY(-2px);
+}
+.next-game:active {
+  transform: scale(0.97);
+}
+.next-game img {
+  width: 100%;
+  max-width: 100%;
+  height: auto;
+  aspect-ratio: 4 / 3;
+  object-fit: cover;
+  border-radius: 12px;
+  display: block;
+  background: #fff8e7;
+}
+.next-words {
+  display: grid;
+  gap: 4px;
+}
+.next-kicker {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 700;
+}
+.next-words strong {
+  font-size: var(--s-lead);
+  line-height: 1.15;
 }
 @keyframes pop {
   from {
@@ -150,11 +261,12 @@
 
 /* Welcome-back card */
 .resume-card {
+  color: var(--c-ink);
   margin: auto;
-  background: #fff;
-  border: 4px solid var(--ink);
-  border-radius: 30px;
-  padding: 22px;
+  background: var(--lv, var(--c-lv1));
+  border-radius: var(--radius);
+  padding: 32px 28px;
+  font-family: var(--f);
   text-align: center;
   max-width: 460px;
   display: flex;
@@ -167,8 +279,8 @@
   margin: 0.2em 0;
 }
 .resume-card p {
-  margin: 0 0 6px;
-  font-weight: 700;
+  margin: 0 0 12px;
+  font-size: var(--s-body);
 }
 .resume-card .row {
   display: flex;
@@ -176,16 +288,13 @@
   flex-wrap: wrap;
   justify-content: center;
 }
-.resume-card .btn {
-  min-height: 56px;
-}
 
 /* Talk-together panel: questions for the grown-up (not spoken aloud). */
 .talk {
-  padding: 6px 14px 8px;
-  background: #eef6ff;
-  border-bottom: 3px solid var(--ink);
-  font-size: 0.95rem;
+  padding: 10px clamp(10px, 2vw, 24px) 12px;
+  background: var(--c-lv4);
+  font-family: var(--f);
+  font-size: var(--s-body);
 }
 .talk ul {
   margin: 2px 0 0;
@@ -193,4 +302,36 @@
 }
 .talk li {
   margin: 2px 0;
+}
+
+@media (max-width: 760px) {
+  .page-play .bar {
+    padding: 8px 10px;
+    gap: 6px;
+  }
+  .page-play .bar-title {
+    flex: 1 1 calc(100% - 140px);
+    font-size: 1.3rem;
+  }
+  .bar-tools {
+    width: 100%;
+    flex-wrap: nowrap;
+  }
+  .page-play .bar-tools .pill {
+    flex: 1 1 0;
+    min-width: 0;
+    justify-content: center;
+    flex-direction: column;
+    gap: 0;
+    min-height: 60px;
+    padding: 4px 6px;
+    font-size: var(--s-small);
+    border-radius: 16px;
+  }
+  .page-play .bar-tools .pill .lbl {
+    white-space: nowrap;
+  }
+  .next-game {
+    grid-template-columns: 120px minmax(0, 1fr);
+  }
 }

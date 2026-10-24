@@ -1,168 +1,772 @@
-/* Home page: hero header and the level map with game tiles. */
-.hero {
-  display: flex;
-  gap: 16px;
-  align-items: center;
-  flex-wrap: wrap;
-  padding: 18px 20px;
-  background: linear-gradient(120deg, #e7f9f2, #fff0f5);
-  border-bottom: 4px solid var(--ink);
+/* Home page, made for a child of 4–7 who may not read yet (decisions 0008, 0009). Tokens in type.css.
+   Big pictures to tap, words in Andika (single-storey a and g), every target 56px or more, sentence case.
+   One grid: content up to 1240px between equal --edge margins. */
+html:has(.page-home),
+html:has(.page-home) body,
+html:has(.page-grownups),
+html:has(.page-grownups) body {
+  background: var(--c-paper);
 }
-.hero h1 {
-  margin: 0;
-  font-size: clamp(1.8rem, 5vw, 2.8rem);
-  letter-spacing: 0.5px;
+.page-home {
+  font-family: var(--f);
+  color: var(--c-ink);
+  background: var(--c-paper);
+  font-size: var(--s-body);
+  line-height: 1.45;
 }
-.hero .tag {
-  margin: 0.2em 0;
+.page-home a {
+  color: inherit;
+}
+.page-home h1,
+.page-home h2 {
+  font-family: var(--f);
   font-weight: 700;
+  letter-spacing: -0.01em;
+  text-wrap: balance;
 }
-.hero .count {
-  margin: 0;
-  font-weight: 800;
-  color: #a05a00;
+.page-home .chapter > *,
+.page-home .about > *,
+.page-home .foot > * {
+  max-width: 1240px;
+  margin-inline: auto;
 }
-.hero-btns {
-  margin-left: auto;
-  display: flex;
-  gap: 8px;
-  flex-wrap: wrap;
-}
-.map {
-  max-width: 1100px;
-  margin: 0 auto;
-  padding: 14px 16px 40px;
-}
-.level {
-  margin: 24px 0;
-  padding: 16px;
-  border-radius: 28px;
-  border: 3px solid var(--ink);
-  background: #fff;
-}
-.level h2 {
-  margin: 0 0 12px;
-  font-size: 1.4rem;
-  display: flex;
-  gap: 8px;
-  align-items: baseline;
-  flex-wrap: wrap;
-}
-.level h2 small {
-  font-weight: 600;
-  opacity: 0.7;
-  font-size: 0.9rem;
-}
-.lv1 {
-  background: #fff3df;
-}
-.lv2 {
-  background: #e8f9ee;
-}
-.lv3 {
-  background: #fff0f6;
-}
-.lv4 {
-  background: #eaf4ff;
-}
-.lv5 {
-  background: #f3ecff;
-}
-.tiles {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
-  gap: 14px;
-}
-.tile {
-  position: relative;
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
+
+/* ---- buttons: one shape (fully round), flat; pictures with words ---- */
+.pill {
+  display: inline-flex;
   align-items: center;
-  text-align: center;
+  gap: 8px;
+  min-height: 56px;
+  padding: 0 22px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--c-paper);
+  color: var(--c-ink);
+  font: 700 var(--s-body) / 1 var(--f);
+  white-space: nowrap;
   text-decoration: none;
-  background: #fff;
-  border: 3px solid var(--ink);
-  border-radius: var(--r);
-  padding: 26px 10px 12px;
-  box-shadow: var(--shadow);
-  transition: transform 0.12s;
-  min-height: 200px;
+  cursor: pointer;
+  transition:
+    transform 0.15s var(--ease),
+    background-color 0.15s;
 }
-.tile:hover,
-.tile:focus-visible {
-  transform: translateY(-4px) rotate(-1deg);
+.pill:hover {
+  background: var(--c-lv1);
 }
-.tile .big {
-  font-size: 3rem;
-  line-height: 1;
+.pill:active {
+  transform: scale(0.95);
 }
-.tile strong {
-  font-size: 1.05rem;
+.page-home .pill,
+.page-play .pill,
+.page-grownups .pill {
+  color: var(--c-ink);
 }
-.tile .sub {
-  font-size: 0.82rem;
-  opacity: 0.75;
+.page-home .pill.back,
+.page-play .pill.back,
+.page-grownups .pill.back {
+  background: var(--c-ink);
+  color: var(--c-paper);
 }
-.tile .stars {
-  margin-top: auto;
-  font-size: 0.95rem;
-  font-weight: 800;
-  min-height: 1.3em;
+.page-home :focus-visible,
+.page-play :focus-visible,
+.page-grownups :focus-visible {
+  outline: 4px solid var(--c-accent);
+  outline-offset: 3px;
 }
-.tile .num {
+.ic {
+  display: block;
+  flex: none;
+}
+.linkish {
+  background: none;
+  border: 0;
+  padding: 6px 0;
+  min-height: 44px;
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+  text-decoration: underline;
+  text-decoration-thickness: 2px;
+  text-underline-offset: 4px;
+}
+.linkish .pic {
+  display: none;
+}
+
+/* ---- top row ---- */
+.top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 16px var(--edge);
+  flex-wrap: wrap;
+  max-width: 1240px;
+  margin-inline: auto;
+  box-sizing: content-box;
+}
+.mark {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+}
+.top h1 {
+  margin: 0;
+  font-size: clamp(1.6rem, 1.2rem + 1.6vw, 2.5rem);
+  line-height: 1.05;
+}
+.top-tools {
+  display: flex;
+  gap: 8px;
+}
+.tool {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  min-width: 72px;
+  min-height: 64px;
+  padding: 6px 10px;
+  border: 0;
+  border-radius: 16px;
+  background: transparent;
+  color: var(--c-ink);
+  font: 700 var(--s-small) / 1.1 var(--f);
+  text-decoration: none;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background-color 0.15s;
+}
+.tool .pic {
+  display: block;
+}
+.tool:hover {
+  background: rgba(10, 10, 10, 0.07);
+}
+.tool[aria-pressed='false'] {
+  color: #5a5348;
+}
+
+/* ---- the big play card ---- */
+.playcard {
+  padding: 0 var(--edge);
+  max-width: 1240px;
+  margin-inline: auto;
+  box-sizing: content-box;
+}
+.playcard-link {
+  display: grid;
+  grid-template-columns: minmax(0, 7fr) minmax(0, 5fr);
+  gap: clamp(20px, 3vw, 48px);
+  align-items: center;
+  background: var(--lv);
+  border-radius: 28px;
+  padding: clamp(16px, 2.4vw, 32px);
+  text-decoration: none;
+  transition: transform 0.2s var(--ease);
+}
+.playcard-link:hover {
+  transform: translateY(-3px);
+}
+.playcard-link:active {
+  transform: scale(0.985);
+}
+.playcard-pic {
+  position: relative;
+  display: block;
+  border-radius: 18px;
+  overflow: hidden;
+  background: #fff8e7;
+  aspect-ratio: 4 / 3;
+  max-width: 100%;
+}
+.playcard-pic img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  animation: drift 14s var(--ease) infinite alternate;
+}
+@keyframes drift {
+  to {
+    transform: scale(1.05);
+  }
+}
+.bigplay {
   position: absolute;
-  top: -12px;
-  left: -8px;
-  width: 36px;
-  height: 36px;
+  right: 16px;
+  bottom: 16px;
+  width: 104px;
+  height: 104px;
   border-radius: 50%;
-  background: var(--yellow);
-  border: 3px solid var(--ink);
+  background: var(--c-accent);
+  color: var(--c-ink);
   display: grid;
   place-items: center;
-  font-weight: 900;
+  padding-left: 6px;
+  box-sizing: border-box;
+  animation: breathe 2.4s var(--ease) infinite;
 }
-.tile.done {
-  background: #f1fff9;
-}
-.tile.next {
-  outline: 4px dashed var(--orange);
-  outline-offset: 3px;
-  animation: bob 1.6s ease-in-out infinite;
-}
-@keyframes bob {
+@keyframes breathe {
   50% {
-    transform: translateY(-5px);
+    transform: scale(1.08);
   }
 }
-.foot {
-  text-align: center;
-  padding: 20px;
-  font-size: 0.8rem;
-  opacity: 0.7;
+.playcard-text {
+  display: grid;
+  gap: 12px;
+  align-content: center;
+  min-width: 0;
 }
-
-.resume-tag {
-  font-size: 0.8rem;
-  font-weight: 800;
-  background: var(--yellow);
-  border: 2px solid var(--ink);
+.playcard-kicker {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-weight: 700;
+  font-size: var(--s-body);
+}
+.mini-glyph {
+  width: 36px;
+  height: 36px;
+}
+.playcard-title {
+  margin: 0;
+  font-size: var(--s-display);
+  line-height: 1;
+}
+.playcard-sub {
+  font-size: var(--s-lead);
+  line-height: 1.3;
+}
+.playcard-sub.strong {
+  font-weight: 700;
+}
+.go {
+  justify-self: start;
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 8px;
+  min-height: 80px;
+  padding: 0 40px 0 30px;
   border-radius: 999px;
-  padding: 1px 10px;
+  background: var(--c-accent);
+  color: var(--c-ink);
+  font-weight: 700;
+  font-size: clamp(1.6rem, 1.2rem + 1.4vw, 2.4rem);
+}
+.page-home .count {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 16px 0 0;
+  font-weight: 700;
+  font-size: var(--s-body);
+  font-variant-numeric: tabular-nums;
 }
 
-@media (max-width: 560px) {
-  body {
-    font-size: 16px;
+/* ---- pick a level (pictures) ---- */
+.levels {
+  padding: 72px var(--edge) 88px;
+  max-width: 1240px;
+  margin-inline: auto;
+  box-sizing: content-box;
+}
+.levels-h {
+  margin: 0 0 20px;
+  font-size: var(--s-head);
+}
+.level-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 12px;
+}
+.level-btn {
+  width: 100%;
+  min-height: 200px;
+  border: 0;
+  border-radius: 24px;
+  background: var(--lv);
+  color: var(--c-ink);
+  display: grid;
+  justify-items: center;
+  align-content: center;
+  gap: 6px;
+  padding: 18px 10px;
+  font: 400 var(--s-small) / 1.2 var(--f);
+  cursor: pointer;
+  transition: transform 0.18s var(--ease);
+}
+.level-btn strong {
+  font-size: var(--s-lead);
+}
+.level-btn:hover {
+  transform: translateY(-4px) rotate(-1deg);
+}
+.level-btn:active {
+  transform: scale(0.95);
+}
+.level-glyph {
+  width: 84px;
+  height: 84px;
+}
+
+/* ---- the level bar (sticks while the chapters scroll; takes the chapter's colour) ---- */
+.levelbar {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  background: var(--lv);
+  transition: background-color 0.3s;
+}
+.levelbar-in {
+  display: flex;
+  gap: 6px;
+  padding: 8px var(--edge);
+  max-width: 1240px;
+  margin-inline: auto;
+  box-sizing: content-box;
+}
+.levelbar button {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  border: 0;
+  background: var(--btn-lv);
+  color: var(--c-ink);
+  min-height: 56px;
+  padding: 0 18px 0 10px;
+  border-radius: 999px;
+  font: 700 var(--s-body) / 1 var(--f);
+  cursor: pointer;
+}
+.bar-glyph {
+  width: 34px;
+  height: 34px;
+}
+.levelbar button.on {
+  background: var(--c-ink);
+  color: var(--c-paper);
+}
+.levelbar button.on .bar-glyph [fill='#0a0a0a'],
+.levelbar button.on .bar-glyph g[fill='#0a0a0a'] * {
+  fill: var(--c-paper);
+}
+.levelbar button.on .bar-glyph [fill='#ffffff'] {
+  fill: var(--c-ink);
+}
+.levelbar button.on .bar-glyph [stroke='#ffffff'] {
+  stroke: var(--c-ink);
+}
+.levelbar button.on .bar-glyph [stroke='#0a0a0a'] {
+  stroke: var(--c-paper);
+}
+
+/* ---- chapters ---- */
+.chapter {
+  background: var(--lv);
+  padding: 80px var(--edge) 96px;
+  scroll-margin-top: 72px;
+}
+.chapter-head {
+  display: flex;
+  align-items: center;
+  gap: clamp(16px, 3vw, 40px);
+  margin-bottom: 48px;
+}
+.chapter h2 {
+  margin: 0;
+  font-size: var(--s-display);
+  line-height: 0.95;
+  outline: none;
+}
+.chapter-lead {
+  margin: 10px 0 0;
+  font-size: var(--s-lead);
+  line-height: 1.3;
+  max-width: 40ch;
+}
+.stage-glyph {
+  flex: none;
+  width: clamp(96px, 12vw, 168px);
+  height: auto;
+}
+.games {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 36px 24px;
+}
+.tile {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-areas:
+    'pic pic'
+    'title status'
+    'sub sub';
+  gap: 10px 12px;
+  align-items: start;
+  text-decoration: none;
+  border-radius: 20px;
+  padding: 10px;
+  margin: -10px;
+  transition:
+    background-color 0.15s,
+    transform 0.18s var(--ease);
+}
+.tile:hover {
+  background: rgba(255, 255, 255, 0.5);
+}
+.tile:active {
+  transform: scale(0.97);
+}
+.tile-pic {
+  grid-area: pic;
+  display: block;
+  border-radius: 16px;
+  overflow: hidden;
+  background: #fff8e7;
+}
+.thumb {
+  width: 100%;
+  max-width: 100%;
+  height: auto;
+  aspect-ratio: 4 / 3;
+  object-fit: cover;
+  display: block;
+}
+.tile.next .tile-pic {
+  outline: 5px solid var(--c-ink);
+  outline-offset: 3px;
+}
+.tile-title {
+  grid-area: title;
+  font-size: var(--s-lead);
+  font-weight: 700;
+  line-height: 1.15;
+}
+.tile-status {
+  grid-area: status;
+  padding-top: 2px;
+}
+.tile .sub {
+  grid-area: sub;
+  font-size: var(--s-body);
+  line-height: 1.35;
+}
+.tile .resume-tag,
+.tile .next-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: var(--s-small);
+  font-weight: 700;
+  white-space: nowrap;
+  background: var(--c-ink);
+  color: var(--c-paper);
+  border-radius: 999px;
+  padding: 7px 14px;
+}
+.stars-row {
+  display: inline-flex;
+  gap: 2px;
+  flex: none;
+}
+.star-ic {
+  display: block;
+}
+.star-ic.off {
+  opacity: 0.4;
+}
+
+/* ---- about ---- */
+.about {
+  background: var(--c-paper);
+  padding: 112px var(--edge) 96px;
+}
+.about-h {
+  margin: 0 auto 36px;
+  font-size: var(--s-head);
+  line-height: 1;
+}
+.about-text {
+  margin: 0 auto;
+  max-width: 1240px;
+  padding-right: min(30%, 360px);
+  box-sizing: border-box;
+  font-size: var(--s-lead);
+  line-height: 1.4;
+}
+.about-text strong {
+  font-weight: 700;
+}
+.hl {
+  background: var(--lv);
+  color: inherit;
+  padding: 0 0.12em;
+  -webkit-box-decoration-break: clone;
+  box-decoration-break: clone;
+}
+.hl-link {
+  background: var(--c-accent);
+  padding: 0 0.12em;
+  text-decoration: none;
+  font-weight: 700;
+  -webkit-box-decoration-break: clone;
+  box-decoration-break: clone;
+}
+.hl-link:hover {
+  text-decoration: underline;
+}
+
+/* ---- footer: the name built from blocks ---- */
+.foot {
+  background: var(--c-night);
+  color: var(--c-paper);
+  padding: 96px var(--edge) 32px;
+}
+.blockmark {
+  display: flex;
+  align-items: flex-end;
+  gap: 4px;
+  height: 30svh;
+  min-height: 170px;
+}
+.blk-letter {
+  flex: 1;
+  height: var(--hgt);
+  background: var(--lv);
+  color: var(--c-night);
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  overflow: hidden;
+  border-radius: 8px;
+  transition: height 0.4s var(--ease);
+}
+.blk-letter span {
+  font-weight: 700;
+  font-size: clamp(3rem, 8vw, 8rem);
+  line-height: 0.95;
+}
+.blockmark:hover .blk-letter:nth-child(odd) {
+  height: calc(var(--hgt) - 8%);
+}
+.foot-cols {
+  display: grid;
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  gap: var(--gap);
+  margin-top: 56px;
+}
+.foot-cols > div {
+  grid-column: span 2;
+}
+.foot-cols > .foot-credit {
+  grid-column: 9 / span 4;
+}
+.foot h2 {
+  margin: 0 0 8px;
+  font-size: var(--s-body);
+}
+.foot ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 2px;
+}
+.foot-credit p {
+  margin: 0 0 12px;
+  line-height: 1.45;
+}
+.foot-last {
+  margin-top: 64px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  font-size: var(--s-small);
+}
+
+/* ---- entrances (content shows without script; only below-the-fold parts start lowered) ---- */
+.reveal.pre {
+  opacity: 0;
+  transform: translateY(24px);
+}
+.reveal.pre.in {
+  opacity: 1;
+  transform: none;
+  transition:
+    opacity 0.6s var(--ease) var(--d, 0ms),
+    transform 0.6s var(--ease) var(--d, 0ms);
+}
+
+/* ---- tablet ---- */
+@media (max-width: 1024px) {
+  .level-list {
+    gap: 8px;
   }
-  .hero-btns {
-    margin-left: 0;
+  .level-btn {
+    min-height: 170px;
   }
-  .tiles {
-    grid-template-columns: repeat(2, 1fr);
+  .level-glyph {
+    width: 64px;
+    height: 64px;
+  }
+  .foot-cols > div {
+    grid-column: span 4;
+  }
+  .foot-cols > .foot-credit {
+    grid-column: 1 / -1;
+  }
+}
+@media (max-width: 860px) {
+  .playcard-link {
+    grid-template-columns: 1fr;
+  }
+  .levelbar button:not(.on) .lb-name {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+  .levelbar button {
+    padding: 0 11px;
+  }
+  .levelbar button.on {
+    padding: 0 16px 0 10px;
+  }
+}
+
+/* ---- phone ---- */
+@media (max-width: 600px) {
+  .top {
+    padding: 10px 16px;
+  }
+  .top .owl {
+    width: 40px;
+    height: 40px;
+  }
+  .top h1 {
+    font-size: 1.45rem;
+  }
+  .top-tools {
+    width: 100%;
+    justify-content: space-between;
+  }
+  .tool {
+    flex: 1;
+    flex-direction: row;
+    gap: 6px;
+    min-width: 0;
+    min-height: 56px;
+    background: rgba(10, 10, 10, 0.05);
+  }
+  .playcard {
+    padding: 0 12px;
+  }
+  .playcard-link {
+    border-radius: 22px;
+    padding: 12px 12px 20px;
+  }
+  .bigplay {
+    width: 84px;
+    height: 84px;
+    right: 12px;
+    bottom: 12px;
+  }
+  .go {
+    min-height: 72px;
+    width: 100%;
+    justify-content: center;
+    box-sizing: border-box;
+  }
+  .levels {
+    padding: 48px 16px 64px;
+  }
+  .level-list {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .level-list li:last-child {
+    grid-column: 1 / -1;
+  }
+  .level-btn {
+    min-height: 150px;
+  }
+  .levelbar-in {
+    padding: 6px 12px;
+    gap: 4px;
+    justify-content: space-between;
+  }
+  .chapter {
+    padding: 56px 16px 80px;
+  }
+  .chapter-head {
+    gap: 14px;
+    margin-bottom: 32px;
+  }
+  .stage-glyph {
+    width: 84px;
+  }
+  .games {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 28px 14px;
   }
   .tile {
-    min-height: 180px;
+    grid-template-columns: 1fr;
+    grid-template-areas:
+      'pic'
+      'title'
+      'status'
+      'sub';
+    gap: 6px;
+    padding: 6px;
+    margin: -6px;
+  }
+  .tile-title {
+    font-size: 1.2rem;
+  }
+  .tile .sub {
+    display: none;
+  }
+  .about {
+    padding: 88px 16px;
+  }
+  .about-text {
+    padding-right: 0;
+    font-size: 1.2rem;
+  }
+  .foot {
+    padding: 64px 16px 24px;
+  }
+  .blockmark {
+    height: 20svh;
+    min-height: 120px;
+  }
+  .blk-letter span {
+    font-size: 10vw;
+  }
+  .foot-cols > div {
+    grid-column: span 6;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .playcard-pic img,
+  .bigplay {
+    animation: none;
+  }
+  .reveal.pre {
+    opacity: 1;
+    transform: none;
   }
 }
