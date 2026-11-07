@@ -2,6 +2,10 @@
 
 Versions follow [semantic versioning](https://semver.org/): patch = fixes, minor = new games or features, major = changes to saved data or the game contract.
 
+## 1.8.1 — 2026-11-07
+
+- **Every game fits on one screen** (decision 0011): when a game is taller or wider than the screen it is shrunk to fit, so nothing needs scrolling. Checked on a 10.5-inch iPad Pro held both ways. Dragging, dropping and the Watch demos follow the finger and land in the right place at any size.
+
 ## 1.8.0 — 2026-11-07
 
 Music, rhymes and songs (decision 0010).

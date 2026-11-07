@@ -29,12 +29,21 @@ export default defineConfig({
           localStorage: [
             { name: 'nilaa:voice', value: process.env.VOICE ? 'true' : 'false' },
             { name: 'nilaa:fasttests', value: '1' }, // voice off: no reading pauses (see src/lib/speech.js)
+            // FITSCALE=0.75 npm test: draw every game scaled down, to check pointer maths (src/lib/fit.js)
+            ...(process.env.FITSCALE ? [{ name: 'nilaa:fitscale', value: process.env.FITSCALE }] : []),
           ],
         },
       ],
     },
   },
   projects: [
+    // IPAD=1 adds the 10.5-inch iPad Pro, both ways round (decision 0011)
+    ...(process.env.IPAD
+      ? [
+          { name: 'ipad-portrait', use: { viewport: { width: 834, height: 1112 }, hasTouch: true } },
+          { name: 'ipad-landscape', use: { viewport: { width: 1112, height: 834 }, hasTouch: true } },
+        ]
+      : []),
     { name: 'desktop', use: { viewport: { width: 1024, height: 768 } } },
     { name: 'phone', use: { ...devices['Pixel 5'], viewport: { width: 390, height: 780 }, launchOptions } },
   ],
