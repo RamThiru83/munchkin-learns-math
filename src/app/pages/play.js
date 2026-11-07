@@ -15,6 +15,7 @@ import { gamePicture } from './home.js';
 import { loadVoicePack, voiceReady, fastTests } from '../../lib/speech.js';
 import { RHYMES, SONGS, MOVES } from '../../content/rhymes.js';
 import { songCard } from '../sing.js';
+import { fitToStage } from '../../lib/fit.js';
 
 const { h, say, sfx, confetti, settings, setVoiceOn, stopSpeaking, jingle, band } = core;
 
@@ -52,6 +53,10 @@ export function renderPlay(app, id) {
   );
   const dots = h('div', { class: 'dots' });
   const stage = h('main', { class: 'stage', id: 'main' });
+  // The game draws into `fit`, which is scaled down (never up) so the whole game always fits the screen without
+  // scrolling (decision 0011). drag.js and fixedAt() in lib/fit.js turn screen pixels into the game's own pixels.
+  const fit = h('div', { class: 'fit' });
+  const stopFit = fitToStage(stage, fit);
   /** A frame button: picture above (or beside) a short word, at least 56px tall. */
   const tool = (cls, pic, word, attrs = {}) =>
     h('button', { class: `pill ${cls}`, type: 'button', ...attrs }, icon(pic), h('span', { class: 'lbl' }, word));
@@ -207,7 +212,8 @@ export function renderPlay(app, id) {
     stage.classList.remove('demo-running');
     unmountGame();
     stopSpeaking();
-    stage.replaceChildren();
+    stage.replaceChildren(fit);
+    fit.replaceChildren();
     dots.replaceChildren();
     demoFn = null;
     watchBtn.hidden = true;
@@ -240,7 +246,7 @@ export function renderPlay(app, id) {
     /** The api object every game receives. See docs/GAME-CONTRACT.md. */
     const api = {
       ...core,
-      root: stage,
+      root: fit,
       meta,
       resume: startAt,
       prompt(text) {
@@ -425,6 +431,7 @@ export function renderPlay(app, id) {
     destroy() {
       stopMusic();
       unmountGame();
+      stopFit();
     },
   };
 }
