@@ -2,6 +2,17 @@
 
 Versions follow [semantic versioning](https://semver.org/): patch = fixes, minor = new games or features, major = changes to saved data or the game contract.
 
+## 1.8.0 — 2026-11-07
+
+Music, rhymes and songs (decision 0010).
+
+- **Rhyme time:** every game opens with its own four-line rhyme, chanted by the narrator over a tune in its level's style, with the words lighting up as they are said. Tap "Let's play!" to start at once.
+- **Sung instructions:** a game's instructions are chanted over a soft beat; the owl bobs along.
+- **Song time:** finishing a game plays the level's song with a move to do: clap (Seeds), wiggle (Sprouts), jump (Buds), spin (Blossoms), dance (Fruits).
+- **A sound for each level:** ukulele, marimba, xylophone, steel drum and bells; a "ta-da" when a round is done; the level's tune when a level is picked; a soft tune on the home page.
+- **Music switch** next to Voice and Sound (and in the footer). The Sound switch now shows a bell.
+- All music is made in the browser (no audio files); all words are original. The rhymes are recorded in audio/voice/songs.bin (scripts/voice/songs.mjs).
+
 ## 1.7.0 — 2026-10-24
 
 A new look for everything around the games, made for the child who plays (decisions 0008 and 0009); the games themselves are unchanged.
