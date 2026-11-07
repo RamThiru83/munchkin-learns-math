@@ -26,7 +26,7 @@
  *     round 5 .goal[data-target], .flag, .axis (0 at its left edge, 20 at its right edge).
  *   - `tok` is bumped on every round (re)start so stale async work (owl turns, demo, pauses) stops itself.
  */
-import { h, sleep, pick, shuffle, range, sfx, resumeRound } from '../lib/core.js';
+import { h, sleep, pick, shuffle, range, sfx, resumeRound, scaleOf } from '../lib/core.js';
 
 const ID = 'number-path-race';
 const ME = '🐰';
@@ -502,7 +502,9 @@ export default {
         flag.style.transition = 'none';
       });
       flag.addEventListener('pointermove', (e) => {
-        if (from) flag.style.transform = `translate(${e.clientX - from.x}px, ${e.clientY - from.y}px) scale(1.1)`;
+        const k = scaleOf(flag); // the game may be scaled to fit (lib/fit.js)
+        if (from)
+          flag.style.transform = `translate(${(e.clientX - from.x) / k}px, ${(e.clientY - from.y) / k}px) scale(1.1)`;
       });
       const up = (e) => {
         if (!from) return;
@@ -653,7 +655,8 @@ export default {
         const f = st.flag.getBoundingClientRect();
         const x = a.left + (goal / LINE_MAX) * a.width;
         st.flag.style.transition = 'transform .8s ease-in-out';
-        st.flag.style.transform = `translate(${x - (f.left + f.width * 0.15)}px, ${a.top - f.bottom}px)`;
+        const k = scaleOf(st.flag);
+        st.flag.style.transform = `translate(${(x - (f.left + f.width * 0.15)) / k}px, ${(a.top - f.bottom) / k}px)`;
         await sleep(850);
         if (!live(t)) return;
         st.flag.style.transition = 'none';

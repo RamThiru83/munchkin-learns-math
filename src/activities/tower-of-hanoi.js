@@ -18,7 +18,7 @@
  *     the second miss in a row gives a glowing hint.
  *   - Layout is measured from the board width (ResizeObserver); G holds the geometry.
  */
-import { h, sleep, shuffle, rand, pick, sfx, COLORS, resumeRound } from '../lib/core.js';
+import { h, sleep, shuffle, rand, pick, sfx, COLORS, resumeRound, scaleOf } from '../lib/core.js';
 
 // ---------- pure helpers (kept free of DOM so they can be tested) ----------
 // pos[s] = peg (0..2) of disc s, where s = 0 is the smallest disc.
@@ -394,8 +394,9 @@ ${C} .info .btn{min-height:56px}
         id: e.pointerId,
         sx: e.clientX,
         sy: e.clientY,
-        ox: e.clientX - r.left - d._x,
-        oy: e.clientY - r.top - d._y,
+        k: scaleOf(board), // the game may be scaled to fit (lib/fit.js): pointer offsets in game px
+        ox: (e.clientX - r.left) / scaleOf(board) - d._x,
+        oy: (e.clientY - r.top) / scaleOf(board) - d._y,
         moved: false,
       };
     });
@@ -410,7 +411,7 @@ ${C} .info .btn{min-height:56px}
         sfx('pop');
       }
       const r = board.getBoundingClientRect();
-      setXY(grab.s, e.clientX - r.left - grab.ox, e.clientY - r.top - grab.oy);
+      setXY(grab.s, (e.clientX - r.left) / grab.k - grab.ox, (e.clientY - r.top) / grab.k - grab.oy);
       zones.forEach((z, p) => z.classList.toggle('sel', p === colAt(e.clientX)));
     });
     const release = (e, cancelled) => {

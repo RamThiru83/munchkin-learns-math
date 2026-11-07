@@ -30,7 +30,7 @@
  *   - Test hooks: `export const __test` (checkPuzzles, solve, keysAt, SH, POOL, fillD, outlineD) and
  *     `wrap.__bfp` on the game element (st, cell, origin(), findHint(), M, same(pid, rot)).
  */
-import { h, sleep, shuffle, rand, pick, sfx, COLORS, resumeRound } from '../lib/core.js';
+import { h, sleep, shuffle, rand, pick, sfx, COLORS, resumeRound, scaleOf } from '../lib/core.js';
 
 const ID = 'build-from-picture';
 const PAD = 0.5; // board margin around the silhouette, in cells
@@ -759,7 +759,8 @@ export default {
       drag.dx = e.clientX - drag.sx;
       drag.dy = e.clientY - drag.sy;
       if (Math.abs(drag.dx) + Math.abs(drag.dy) > DRAG_START) drag.moved = true;
-      if (drag.moved) drag.p.el.style.transform = `translate(${drag.dx}px, ${drag.dy}px) scale(1.05)`;
+      const k = scaleOf(drag.p.el); // the game may be scaled to fit (lib/fit.js)
+      if (drag.moved) drag.p.el.style.transform = `translate(${drag.dx / k}px, ${drag.dy / k}px) scale(1.05)`;
     }
     function onUp(e) {
       if (!drag || e.pointerId !== drag.id) return;

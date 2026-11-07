@@ -19,7 +19,7 @@
  *   - Test hook: the default export's `_make(round)` is makePuzzle (returns {grid, hole, answer, choices, rule}).
  *   - Tap flies the piece into the hole; drag carries it (drop within DROP_TOLERANCE x cell width of the hole).
  */
-import { h, sleep, shuffle, rand, pick, flyTo, glideBack, sfx, resumeRound } from '../lib/core.js';
+import { h, sleep, shuffle, rand, pick, flyTo, glideBack, sfx, resumeRound, scaleOf } from '../lib/core.js';
 
 const COL = { red: '#ef476f', yellow: '#ffd166', green: '#06d6a0', blue: '#118ab2', purple: '#9b5de5' };
 const SHAPES = ['circle', 'square', 'triangle', 'star'];
@@ -350,8 +350,9 @@ export default {
           dy = e.clientY - st.y;
         if (!st.moved && Math.hypot(dx, dy) > DRAG_THRESHOLD) st.moved = true;
         if (st.moved) {
-          b.style.transform = `translate(${dx}px, ${dy}px) scale(1.08)`;
-          b._dragPos = { x: dx, y: dy };
+          const k = scaleOf(b); // the game may be scaled to fit (lib/fit.js)
+          b.style.transform = `translate(${dx / k}px, ${dy / k}px) scale(1.08)`;
+          b._dragPos = { x: dx / k, y: dy / k };
         }
       });
       const end = (e, cancelled) => {

@@ -21,7 +21,7 @@
  *   - No exported test hooks. Verified shortest solutions (Node BFS with solve()): rounds 1-5 take
  *     5, 3, 7, 5, 5 crossings for every random variant.
  */
-import { h, sleep, shuffle, pick, drag, sfx, resumeRound } from '../lib/core.js';
+import { h, sleep, shuffle, pick, drag, sfx, resumeRound, scaleOf } from '../lib/core.js';
 
 const ID = 'wolf-goat-cabbage';
 const SAIL_MS = 950;
@@ -370,8 +370,9 @@ export default {
       all.forEach((e) => {
         const a = first.get(e);
         const b = e.getBoundingClientRect();
-        const dx = a.left - b.left;
-        const dy = a.top - b.top;
+        const k = scaleOf(e); // the game may be scaled to fit (lib/fit.js)
+        const dx = (a.left - b.left) / k;
+        const dy = (a.top - b.top) / k;
         if (Math.abs(dx) + Math.abs(dy) > 0.5) e.style.transform = `translate(${dx}px, ${dy}px)`;
       });
       void wrap.offsetWidth;

@@ -22,7 +22,7 @@
  *   - Drag uses its own pointer code with a fixed-position ghost (removed in destroy()); tap adds or
  *     removes a card. The program strip holds at most MAX_CARDS cards.
  */
-import { h, sleep, pick, rand, sfx, resumeRound } from '../lib/core.js';
+import { h, sleep, pick, rand, sfx, resumeRound, scaleOf, fixedAt } from '../lib/core.js';
 
 // ---------- constants ----------
 const ID = 'robot-walks';
@@ -517,7 +517,8 @@ export default {
     function flipFrom(el, fromRect) {
       const b = el.getBoundingClientRect();
       el.style.transition = 'none';
-      el.style.transform = `translate(${fromRect.left - b.left}px,${fromRect.top - b.top}px)`;
+      const k = scaleOf(el);
+      el.style.transform = `translate(${(fromRect.left - b.left) / k}px,${(fromRect.top - b.top) / k}px)`;
       void el.offsetWidth;
       el.style.transition = 'transform .4s cubic-bezier(.3,1.2,.5,1)';
       el.style.transform = '';
@@ -579,18 +580,21 @@ export default {
             g = el.cloneNode(true);
             g.classList.add('rw-ghost');
             g.classList.remove('now', 'bumped');
+            const k = scaleOf(wrap); // the game may be scaled to fit the screen (lib/fit.js)
+            const at = fixedAt(wrap, r.left, r.top);
             Object.assign(g.style, {
-              left: r.left + 'px',
-              top: r.top + 'px',
-              width: r.width + 'px',
-              height: r.height + 'px',
+              left: at.x + 'px',
+              top: at.y + 'px',
+              width: r.width / k + 'px',
+              height: r.height / k + 'px',
             });
             wrap.append(g);
             ghost = g;
             if (inStrip) el.classList.add('lift');
           }
           if (g) {
-            g.style.transform = `translate(${dx}px,${dy}px) scale(1.08)`;
+            const k = scaleOf(wrap);
+            g.style.transform = `translate(${dx / k}px,${dy / k}px) scale(1.08)`;
             const u = document.elementFromPoint(ev.clientX, ev.clientY);
             strip.classList.toggle('over', !!(u && u.closest('.rw-strip')));
           }

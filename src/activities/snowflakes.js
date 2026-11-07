@@ -16,7 +16,7 @@
  *   round 5 TRIPLES brute-force checked (cuts ≥ 5.9 units apart, inside the wedge). Shapes, pairs/triples and target spots
  *   are random each round. No exported test hooks. The drag ghost (.snf-ghost) is position:fixed and removed in destroy().
  */
-import { h, sleep, shuffle, rand, pick, sfx, resumeRound } from '../lib/core.js';
+import { h, sleep, shuffle, rand, pick, sfx, resumeRound, fixedAt, scaleOf } from '../lib/core.js';
 
 // ---------- tiny SVG helper (core.h has no <mask>) ----------
 // The SVG namespace is borrowed from core.h's <svg> (a literal URL would trip the no-external-URLs check).
@@ -598,8 +598,9 @@ export default {
             ghost.style.display = 'block';
           }
           if (dragSt.moved) {
-            ghost.style.left = e.clientX + 'px';
-            ghost.style.top = e.clientY + 'px';
+            const at = fixedAt(ghost, e.clientX, e.clientY); // the game may be scaled to fit (lib/fit.js)
+            ghost.style.left = at.x + 'px';
+            ghost.style.top = at.y + 'px';
           }
         });
         const end = (e, drop) => {
@@ -951,8 +952,9 @@ export default {
       const r = wrap.getBoundingClientRect();
       scissors.classList.add('on');
       scissors.style.transition = `left ${ms}ms ease-in-out, top ${ms}ms ease-in-out`;
-      scissors.style.left = x - r.left + 'px';
-      scissors.style.top = y - r.top + 'px';
+      const k = scaleOf(wrap); // the game may be scaled to fit (lib/fit.js)
+      scissors.style.left = (x - r.left) / k + 'px';
+      scissors.style.top = (y - r.top) / k + 'px';
       await sleep(ms + 60);
     }
     const centre = (el) => {

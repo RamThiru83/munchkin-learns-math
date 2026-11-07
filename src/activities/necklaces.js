@@ -19,7 +19,7 @@
  *   fixed-k rounds): counts are verified at runtime. `token` invalidates pending async work when a round
  *   (re)starts. No exported test hooks.
  */
-import { h, sleep, pick, sfx, resumeRound } from '../lib/core.js';
+import { h, sleep, pick, sfx, resumeRound, scaleOf, fixedAt } from '../lib/core.js';
 
 const ID = 'necklaces';
 const ROUNDS = [
@@ -308,12 +308,14 @@ export default {
       const a = fromEl.getBoundingClientRect();
       const b = toEl.getBoundingClientRect();
       const c = toEl.cloneNode(true);
+      const k = scaleOf(wrap); // the game may be scaled to fit (lib/fit.js)
+      const at = fixedAt(wrap, b.left, b.top);
       Object.assign(c.style, {
         position: 'fixed',
-        left: b.left + 'px',
-        top: b.top + 'px',
-        width: b.width + 'px',
-        height: b.height + 'px',
+        left: at.x + 'px',
+        top: at.y + 'px',
+        width: b.width / k + 'px',
+        height: b.height / k + 'px',
         margin: '0',
         zIndex: '45',
         pointerEvents: 'none',
@@ -321,7 +323,7 @@ export default {
         transition: 'none',
       });
       const s = Math.max(1, Math.min(a.width / b.width, 2.4));
-      c.style.transform = `translate(${a.left + a.width / 2 - (b.left + b.width / 2)}px, ${a.top + a.height / 2 - (b.top + b.height / 2)}px) scale(${s})`;
+      c.style.transform = `translate(${(a.left + a.width / 2 - (b.left + b.width / 2)) / k}px, ${(a.top + a.height / 2 - (b.top + b.height / 2)) / k}px) scale(${s})`;
       wrap.append(c);
       c.getBoundingClientRect();
       c.style.transition = `transform ${ms}ms cubic-bezier(.4,.1,.2,1)`;
@@ -568,7 +570,8 @@ export default {
       const moveHand = async (el, ms = 300) => {
         const r = el.getBoundingClientRect();
         hand.style.transitionDuration = ms + 'ms';
-        hand.style.transform = `translate(${r.left + r.width / 2 - 14}px, ${r.top + r.height / 2 - 4}px)`;
+        const p = fixedAt(hand, r.left + r.width / 2, r.top + r.height / 2);
+        hand.style.transform = `translate(${p.x - 14}px, ${p.y - 4}px)`;
         await sleep(ms);
       };
       // tap only the beads that differ from p (whites first, then blues), then press Add
@@ -596,7 +599,8 @@ export default {
         bench.scrollIntoView({ block: 'nearest' });
         const r0 = bench.getBoundingClientRect();
         hand.style.transition = 'none';
-        hand.style.transform = `translate(${r0.left + r0.width / 2}px, ${r0.bottom + 30}px)`;
+        const p0 = fixedAt(hand, r0.left + r0.width / 2, r0.bottom + 30);
+        hand.style.transform = `translate(${p0.x}px, ${p0.y}px)`;
         hand.getBoundingClientRect();
         hand.style.transition = '';
         await talk(R.flip ? 'No clasp, so it can flip. Watch me.' : 'Watch me make them all, in order.');

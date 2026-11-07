@@ -21,7 +21,7 @@
  *   - Test hooks (named exports, brute-force checked in node): matchSock, matchShoe, analyse(items, match),
  *     makeRound(roundIndex) -> { sure, worst, ... }.
  */
-import { h, sleep, shuffle, pick, flyTo, sfx, settings, resumeRound } from '../lib/core.js';
+import { h, sleep, shuffle, pick, flyTo, sfx, settings, resumeRound, scaleOf } from '../lib/core.js';
 
 const ID = 'shoes-in-dark';
 
@@ -331,7 +331,8 @@ export default {
       slot.classList.add('full');
       const to = el.getBoundingClientRect();
       el.style.transition = 'none';
-      el.style.transform = `translate(${from.left + from.width / 2 - (to.left + to.width / 2)}px, ${from.top + from.height / 2 - (to.top + to.height / 2)}px) scale(1.1)`;
+      const k = scaleOf(el); // the game may be scaled to fit (lib/fit.js)
+      el.style.transform = `translate(${(from.left + from.width / 2 - (to.left + to.width / 2)) / k}px, ${(from.top + from.height / 2 - (to.top + to.height / 2)) / k}px) scale(1.1)`;
       void el.offsetWidth;
       el.style.transition = 'transform .5s cubic-bezier(.3,1.3,.5,1)';
       el.style.transform = '';

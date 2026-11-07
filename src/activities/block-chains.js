@@ -23,7 +23,7 @@
  *   - No exported test hooks. Solvability: an 8-ring (Gray code) and a 2 x 4 grid both embed in the cube
  *     from any starting block, and solve() builds the reference solution, so every puzzle is solvable.
  */
-import { h, sleep, shuffle, rand, pick, drag, flyTo, sfx, COLORS, resumeRound } from '../lib/core.js';
+import { h, sleep, shuffle, rand, pick, drag, flyTo, sfx, COLORS, resumeRound, scaleOf } from '../lib/core.js';
 
 const ID = 'block-chains';
 const ATTR = ['colour', 'shape', 'size'];
@@ -426,7 +426,8 @@ export default {
       el._dragPos = null;
       if (flip) {
         const last = el.getBoundingClientRect();
-        el.style.transform = `translate(${first.left - last.left}px, ${first.top - last.top}px)`;
+        const k = scaleOf(el); // screen px -> game px (lib/fit.js)
+        el.style.transform = `translate(${(first.left - last.left) / k}px, ${(first.top - last.top) / k}px)`;
         void el.offsetWidth;
         el.style.transition = 'transform .25s ease-out';
         el.style.transform = '';
