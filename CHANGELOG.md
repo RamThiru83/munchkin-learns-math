@@ -2,6 +2,10 @@
 
 Versions follow [semantic versioning](https://semver.org/): patch = fixes, minor = new games or features, major = changes to saved data or the game contract.
 
+## 1.9.0 — 2026-11-07
+
+- **Grown-ups can lock games** (decision 0012), like the Little Scientists Club parent lock: "Lock games" on the For grown-ups page (and in the footer) sets a 4-digit PIN, then each game can be locked. Locked games show a padlock, are skipped by "Play next" and "Next game", and need the PIN to open (for that visit). Saved on this device only; nothing is sent anywhere.
+
 ## 1.8.1 — 2026-11-07
 
 - **Every game fits on one screen** (decision 0011): when a game is taller or wider than the screen it is shrunk to fit, so nothing needs scrolling. Checked on a 10.5-inch iPad Pro held both ways. Dragging, dropping and the Watch demos follow the finger and land in the right place at any size.
