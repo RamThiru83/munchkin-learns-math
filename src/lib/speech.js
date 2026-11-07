@@ -19,6 +19,8 @@ try {
 } catch {
   /* no storage */
 }
+/** True while the automated tests run (they skip rhymes and songs). */
+export const fastTests = () => FAST_TESTS;
 
 const EMOJI = /[\u{1F300}-\u{1FAFF}\u2600-\u27BF]|\uFE0F|\u200D/gu;
 function sentences(text) {
@@ -271,6 +273,23 @@ async function say2(text, my, e) {
   e.src = 'browser';
   e.start = performance.now();
   await sayBrowser(text);
+}
+
+/**
+ * How long a line takes to say, in seconds: the length of its recording, or an estimate when it has none
+ * (used to light up the words of a rhyme as they are chanted).
+ */
+export async function lineDuration(text) {
+  const keys = sentences(text).map(keyOf);
+  if (settings.voice && keys.length && keys.every((k) => clips.has(k)) && audio()) {
+    try {
+      const bufs = await Promise.all(keys.map(decode));
+      return bufs.reduce((a, b) => a + b.duration, 0) + 0.12 * (bufs.length - 1);
+    } catch {
+      /* estimate below */
+    }
+  }
+  return 0.6 + 0.36 * String(text).split(/\s+/).length;
 }
 
 /** Turn read-aloud on or off (and stop anything being spoken). */

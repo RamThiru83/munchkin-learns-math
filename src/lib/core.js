@@ -11,6 +11,7 @@ export { settings, setSound } from './settings.js';
 export { sfx, unlockAudio } from './audio.js';
 export { say, stopSpeaking, setVoiceOn } from './speech.js';
 export { confetti } from './confetti.js';
+export { setMusicOn, jingle, motif, band, homeLoop, stopHome } from './music.js';
 export { drag, glideBack, flyTo } from './drag.js';
 export { COLORS } from './colors.js';
 export { resumeRound } from './rounds.js';
