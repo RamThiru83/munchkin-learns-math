@@ -15,3 +15,4 @@ Short notes on choices that a future maintainer might otherwise undo by accident
 | [0009](0009-made-for-children.md) | Made for the child: pictures first, Andika type for beginning readers, 56px+ icon-and-word buttons, quiet grown-up controls |
 | [0010](0010-music-and-rhymes.md) | Music, rhymes and sung instructions: synthesised level bands, a chanted rhyme before every game, a song with a move at the end |
 | [0011](0011-fit-to-screen.md) | Every game fits on one screen: the game is scaled down to fit (never up); pointer maths in game pixels |
+| [0012](0012-game-lock.md) | Grown-ups can lock games with a 4-digit PIN (per device), like the Little Scientists Club parent lock |
