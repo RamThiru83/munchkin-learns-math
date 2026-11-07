@@ -775,3 +775,239 @@ html:has(.page-grownups) body {
     transform: none;
   }
 }
+
+/* ---- grown-ups' game lock (src/app/lock.js, decision 0012) ---- */
+.tile.locked .thumb {
+  filter: grayscale(1);
+  opacity: 0.45;
+}
+.tile.locked .tile-pic {
+  position: relative;
+}
+.tile .padlock {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  color: var(--c-ink);
+}
+.tile .padlock .ic {
+  width: 64px;
+  height: 64px;
+  background: rgba(255, 255, 255, 0.85);
+  border-radius: 50%;
+  padding: 14px;
+  box-sizing: border-box;
+}
+.tile.locked .tile-title {
+  opacity: 0.6;
+}
+.tile .lock-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: var(--s-small);
+  font-weight: 700;
+  color: #5a5348;
+}
+.lk-back {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  background: rgba(10, 10, 10, 0.55);
+  display: grid;
+  place-items: center;
+  padding: 16px;
+  font-family: var(--f);
+}
+.lk-dlg {
+  position: relative;
+  background: var(--c-paper);
+  color: var(--c-ink);
+  border-radius: 24px;
+  padding: 24px clamp(16px, 4vw, 32px) 24px;
+  width: min(440px, 100%);
+  max-height: calc(100svh - 32px);
+  overflow-y: auto;
+  box-sizing: border-box;
+  text-align: center;
+}
+.lk-dlg:has(.lk-levels) {
+  width: min(860px, 100%);
+  text-align: left;
+}
+.lk-dlg h2 {
+  margin: 0 40px 6px;
+  font-size: 1.6rem;
+}
+.lk-dlg:has(.lk-levels) h2 {
+  margin-left: 0;
+}
+.lk-sub {
+  margin: 0 0 12px;
+  line-height: 1.35;
+}
+.lk-x {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 48px;
+  height: 48px;
+  border: 0;
+  border-radius: 50%;
+  background: rgba(10, 10, 10, 0.06);
+  font-size: 28px;
+  line-height: 1;
+  cursor: pointer;
+  color: var(--c-ink);
+}
+.lk-dots {
+  display: flex;
+  justify-content: center;
+  gap: 14px;
+  margin: 8px 0;
+}
+.lk-dots span {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  border: 3px solid var(--c-ink);
+}
+.lk-dots span.on {
+  background: var(--c-ink);
+}
+.lk-msg {
+  min-height: 1.4em;
+  margin: 4px 0 8px;
+  font-weight: 700;
+  color: #a3367f;
+}
+.lk-keys {
+  display: grid;
+  grid-template-columns: repeat(3, 72px);
+  gap: 10px;
+  justify-content: center;
+}
+.lk-keys button {
+  height: 64px;
+  border: 0;
+  border-radius: 16px;
+  background: var(--c-lv1);
+  font: 700 1.5rem var(--f);
+  color: var(--c-ink);
+  cursor: pointer;
+}
+.lk-keys button:active {
+  transform: scale(0.95);
+}
+.lk-link {
+  background: none;
+  border: 0;
+  font: inherit;
+  text-decoration: underline;
+  cursor: pointer;
+  min-height: 44px;
+  color: var(--c-ink);
+}
+.lk-in {
+  font: 700 1.5rem var(--f);
+  width: 8ch;
+  text-align: center;
+  padding: 8px;
+  border: 3px solid var(--c-ink);
+  border-radius: 12px;
+}
+.lk-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  margin: 12px 0;
+}
+.lk-dlg .pill {
+  background: rgba(10, 10, 10, 0.06);
+}
+.lk-dlg .pill.primary {
+  background: var(--c-accent);
+}
+.lk-count {
+  margin: 0 0 0 8px;
+  font-weight: 700;
+}
+.lk-levels {
+  display: grid;
+  gap: 10px;
+}
+.lk-level {
+  background: var(--lv);
+  border-radius: 16px;
+  padding: 10px 12px 12px;
+}
+.lk-level h3 {
+  margin: 0 0 6px;
+  font-size: 1.1rem;
+}
+.lk-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 6px;
+}
+.lk-list label {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 52px;
+  padding: 4px 10px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.7);
+  cursor: pointer;
+}
+.lk-list input {
+  position: absolute;
+  opacity: 0;
+  width: 1px;
+  height: 1px;
+}
+.lk-sw {
+  flex: none;
+  width: 46px;
+  height: 28px;
+  border-radius: 999px;
+  background: #c9c4bb;
+  position: relative;
+  transition: background-color 0.15s;
+}
+.lk-sw::after {
+  content: '';
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: #fff;
+  transition: transform 0.15s;
+}
+.lk-list input:checked + .lk-sw {
+  background: var(--c-ink);
+}
+.lk-list input:checked + .lk-sw::after {
+  transform: translateX(18px);
+}
+.lk-list input:focus-visible + .lk-sw {
+  outline: 4px solid var(--c-accent);
+  outline-offset: 2px;
+}
+.lk-name {
+  font-weight: 700;
+  line-height: 1.2;
+}
+.lock-intro {
+  max-width: 62ch;
+}
+.lock-open {
+  margin-top: 4px;
+}
