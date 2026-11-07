@@ -13,5 +13,6 @@ export { say, stopSpeaking, setVoiceOn } from './speech.js';
 export { confetti } from './confetti.js';
 export { setMusicOn, jingle, motif, band, homeLoop, stopHome } from './music.js';
 export { drag, glideBack, flyTo } from './drag.js';
+export { scaleOf, fixedAt } from './fit.js';
 export { COLORS } from './colors.js';
 export { resumeRound } from './rounds.js';

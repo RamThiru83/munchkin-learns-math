@@ -1,6 +1,7 @@
 /** Pointer-based drag and simple fly-to animations (mouse + touch). */
 import { sleep } from './random.js';
 import { unlockAudio } from './audio.js';
+import { scaleOf } from './fit.js';
 
 // drag(el, { dropSelector, onDrop(dropEl, el)=>bool|void, onStart, onEnd, bounds })
 // - Works with mouse and touch (pointer events). The element follows the pointer via CSS transform.
@@ -18,7 +19,8 @@ export function drag(el, opts = {}) {
     if (!enabled || (e.button != null && e.button > 0)) return;
     e.preventDefault();
     const base = el._dragBase || { x: 0, y: 0 };
-    state = { sx: e.clientX, sy: e.clientY, bx: base.x, by: base.y, moved: false };
+    // k: the game may be scaled to fit the screen; the element moves in the game's own pixels
+    state = { sx: e.clientX, sy: e.clientY, bx: base.x, by: base.y, moved: false, k: scaleOf(el) };
     el.setPointerCapture?.(e.pointerId);
     el.classList.add('dragging');
     el.style.transition = 'none';
@@ -28,9 +30,9 @@ export function drag(el, opts = {}) {
   };
   const move = (e) => {
     if (!state) return;
-    const dx = e.clientX - state.sx;
-    const dy = e.clientY - state.sy;
-    if (Math.abs(dx) + Math.abs(dy) > 4) state.moved = true;
+    const dx = (e.clientX - state.sx) / state.k;
+    const dy = (e.clientY - state.sy) / state.k;
+    if ((Math.abs(dx) + Math.abs(dy)) * state.k > 4) state.moved = true;
     el.style.transform = `translate(${state.bx + dx}px, ${state.by + dy}px) scale(1.08)`;
     el._dragPos = { x: state.bx + dx, y: state.by + dy };
   };
@@ -90,8 +92,9 @@ export function flyTo(el, target, { duration = 400, offset = { x: 0, y: 0 } } = 
   const a = el.getBoundingClientRect();
   const b = target.getBoundingClientRect();
   const base = el._dragPos || el._dragBase || { x: 0, y: 0 };
-  const nx = base.x + (b.left + b.width / 2 - (a.left + a.width / 2)) + offset.x;
-  const ny = base.y + (b.top + b.height / 2 - (a.top + a.height / 2)) + offset.y;
+  const k = scaleOf(el); // screen pixels -> the game's own pixels
+  const nx = base.x + (b.left + b.width / 2 - (a.left + a.width / 2)) / k + offset.x;
+  const ny = base.y + (b.top + b.height / 2 - (a.top + a.height / 2)) / k + offset.y;
   el.style.transition = `transform ${duration}ms cubic-bezier(.4,.1,.2,1)`;
   el.style.transform = `translate(${nx}px, ${ny}px)`;
   el._dragBase = { x: nx, y: ny };
