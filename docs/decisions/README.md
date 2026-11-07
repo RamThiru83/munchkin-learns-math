@@ -13,3 +13,4 @@ Short notes on choices that a future maintainer might otherwise undo by accident
 | [0007](0007-recorded-voice.md) | Recorded Chirp 3 HD voice in per-game packs; browser speech as fallback |
 | [0008](0008-colour-chapters.md) | The frame's look: five colour chapters named after the growing stages, real game pictures, type |
 | [0009](0009-made-for-children.md) | Made for the child: pictures first, Andika type for beginning readers, 56px+ icon-and-word buttons, quiet grown-up controls |
+| [0010](0010-music-and-rhymes.md) | Music, rhymes and sung instructions: synthesised level bands, a chanted rhyme before every game, a song with a move at the end |
