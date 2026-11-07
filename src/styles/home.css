@@ -663,12 +663,17 @@ html:has(.page-grownups) body {
     width: 100%;
     justify-content: space-between;
   }
-  .tool {
-    flex: 1;
-    flex-direction: row;
+  .top-tools {
     gap: 6px;
+  }
+  .tool {
+    flex: 1 1 0;
+    flex-direction: column;
+    gap: 2px;
     min-width: 0;
-    min-height: 56px;
+    min-height: 60px;
+    padding: 4px 2px;
+    font-size: 0.8125rem;
     background: rgba(10, 10, 10, 0.05);
   }
   .playcard {
