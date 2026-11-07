@@ -87,6 +87,7 @@ const ICONS = {
     '<path d="M9 17.5V6.5l10-2v11" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" opacity=".45"/><circle cx="6.5" cy="17.5" r="2.5" fill="currentColor" opacity=".45"/><circle cx="16.5" cy="15.5" r="2.5" fill="currentColor" opacity=".45"/><path d="M3.5 3.5l17 17" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/>',
   grownups:
     '<circle cx="9" cy="7.5" r="3" fill="currentColor"/><circle cx="16.5" cy="10.5" r="2.2" fill="currentColor"/><path d="M3.5 19.5c.4-3.6 2.6-5.5 5.5-5.5s5.1 1.9 5.5 5.5M13.8 19.5c.3-2.4 1.4-3.8 2.7-3.8 1.9 0 3.2 1.4 3.5 3.8" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>',
+  lock: '<rect x="5" y="10.5" width="14" height="10" rx="2.2" fill="currentColor"/><path d="M8 10.5V8a4 4 0 0 1 8 0v2.5" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/>',
   next: '<path d="M5 12h13M13 6.5 18.5 12 13 17.5" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>',
   up: '<path d="M12 19V6M6.5 11 12 5.5 17.5 11" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>',
 };

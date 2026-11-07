@@ -9,6 +9,7 @@ import { stopSpeaking } from '../lib/core.js';
 import { renderHome } from './pages/home.js';
 import { renderPlay } from './pages/play.js';
 import { renderGrownups } from './pages/grownups.js';
+import { isBlocked, askFor, onLockChange } from './lock.js';
 
 const app = document.getElementById('app');
 let current = null; // handle with destroy() for the page on screen
@@ -28,10 +29,29 @@ function teardown() {
 function route() {
   const hash = location.hash || '#/';
   teardown();
-  if (hash.startsWith('#/play/')) current = renderPlay(app, decodeURIComponent(hash.slice('#/play/'.length)));
-  else if (hash === '#/grownups') renderGrownups(app);
+  if (hash.startsWith('#/play/')) {
+    const id = decodeURIComponent(hash.slice('#/play/'.length));
+    if (isBlocked(id)) {
+      // a locked game (a tile, a link or a typed address): show the home page and ask for the grown-up PIN
+      history.replaceState(null, '', '#/');
+      current = renderHome(app);
+      askFor(id, () => (location.hash = '#/play/' + encodeURIComponent(id)));
+      return;
+    }
+    current = renderPlay(app, id);
+  } else if (hash === '#/grownups') renderGrownups(app);
   else current = renderHome(app);
 }
+
+// Locks changed (grown-ups dialog): redraw the home page so padlocks and "Play next" are up to date.
+onLockChange(() => {
+  const h = location.hash || '#/';
+  if (!h.startsWith('#/play/') && h !== '#/grownups') {
+    const y = scrollY;
+    route();
+    scrollTo(0, y);
+  }
+});
 
 window.addEventListener('hashchange', route);
 route();
