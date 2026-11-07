@@ -64,6 +64,7 @@ export default {
 - 5 rounds of increasing difficulty: round 1 very easy, the last round a real challenge for a capable 6–7-year-old.
 - No timers, scores to lose, red crosses or scary themes. Wrong moves bounce back with a hint; after 2 misses in a row give a stronger hint (`.glow`). Never a dead end.
 - Big touch targets (≥ 56 px where possible). Must work from 360 px phone width to desktop with no sideways scrolling.
+- The frame shrinks a game that is bigger than the screen (decision 0011), so `api.root` may be scaled on screen. Anything that moves an element by a pointer distance or by the difference of two `getBoundingClientRect()`s must divide by `scaleOf(el)`; a `position: fixed` element inside the game is placed with `fixedAt(el, x, y)`. `elementFromPoint` and rectangle fractions need no change. Run `FITSCALE=0.72 npm run test:playthrough` to check.
 - Mathematical correctness: verify puzzles and answers (a quick Node brute-force check is ideal; keep it as an exported `_test` object or a test if it is reusable).
 - Original content only: no text copied from the book, no real children's names.
 - Respect that sound and voice may be off: the banner text must always carry the instruction.
