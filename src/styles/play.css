@@ -569,3 +569,14 @@
     transform: none;
   }
 }
+
+/* The game's own box, scaled down to fit the stage when needed (src/lib/fit.js, decision 0011). */
+.fit {
+  flex: none; /* grow with the game, never squeezed by the stage: fit.js then scales it */
+  width: 100%;
+  min-height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  transform-origin: top center;
+}
