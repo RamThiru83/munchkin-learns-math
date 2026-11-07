@@ -48,6 +48,10 @@ The master copy of the recordings (untrimmed clips from Cloud Shell, named by `c
 "Munchkin Learns Math - site/voice-recordings/" (v1.6.1: `chirp3hd-achernar_raw-clips_20261011b.zip.part0–3`, joined with `cat`; see its README.txt). To re-pack
 without re-recording: `bash scripts/voice/trim.sh <that zip> <clips folder>` then `node scripts/voice/pack.mjs <clips folder>`.
 
+## Rhymes and songs (v1.8, decision 0010)
+
+The rhymes before each game and the level songs (`src/content/rhymes.js`) are a separate pack, `audio/voice/songs.bin`, made by `scripts/voice/songs.mjs` with the same voice at rate 1.0. It calls Text-to-Speech directly with an API key (`GOOGLE_TTS_KEY`, never committed), trims each clip with ffmpeg and packs them. Changing a rhyme line means recording that line again (`record` skips clips that exist) and packing.
+
 ## Quality checks done (Oct 2026)
 
 - v1.6.1: with the voice on, every play-through was logged (`?voicelog`, see `scripts/voice/`): no line is cut by
