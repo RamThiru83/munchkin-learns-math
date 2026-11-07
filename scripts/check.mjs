@@ -10,6 +10,8 @@ import { LEVELS, ACTIVITIES } from '../src/content/registry.js';
 import { AGE_LEVELS, AGE_REFS, AGE_INTRO, AGE_CAVEAT } from '../src/content/age-guide.js';
 import { generateIndex } from './gen-index.mjs';
 import { GISTS } from '../src/content/gists.js';
+import { RHYMES, SONGS, MOVES } from '../src/content/rhymes.js';
+import { sentences, keyOf } from './voice/text.mjs';
 
 const dir = fileURLToPath(new URL('../src/activities/', import.meta.url));
 const problems = [];
@@ -137,6 +139,27 @@ if (existsSync('audio/voice/plan.json')) {
     (missing ? `, ${missing} not yet recorded` : '') +
     (noPack.length ? `; no voice pack yet: ${noPack.join(', ')}` : '') +
     ')';
+}
+
+// Rhymes and songs (decision 0010): one rhyme per game, one song per level, all recorded in songs.bin
+{
+  const fail = (m) => problems.push(m);
+  for (const a of ACTIVITIES)
+    if (!Array.isArray(RHYMES[a.id]) || RHYMES[a.id].length !== 4)
+      fail(`${a.id}: add a four-line rhyme to src/content/rhymes.js`);
+  for (const lv of LEVELS) {
+    if (!Array.isArray(SONGS[lv.n]) || SONGS[lv.n].length !== 4)
+      fail(`level ${lv.n}: add a four-line song to src/content/rhymes.js`);
+    if (!MOVES[lv.n]) fail(`level ${lv.n}: add a move to MOVES in src/content/rhymes.js`);
+  }
+  if (existsSync('audio/voice/songs.bin')) {
+    const b = readFileSync('audio/voice/songs.bin');
+    const clips = JSON.parse(b.subarray(4, 4 + b.readUInt32LE(0)).toString('utf8')).clips || {};
+    const lines = [...Object.values(RHYMES), ...Object.values(SONGS)].flat();
+    const missing = lines.flatMap(sentences).filter((x) => !(keyOf(x) in clips));
+    if (missing.length)
+      voiceNote += `; ${missing.length} rhyme sentence(s) not recorded yet (node scripts/voice/songs.mjs record)`;
+  } else voiceNote += '; rhymes not recorded yet (node scripts/voice/songs.mjs)';
 }
 
 if (problems.length) {
