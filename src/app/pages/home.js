@@ -10,7 +10,7 @@
  *   footer   the name built from blocks, settings, credits
  * Every game and level can be chosen from its picture alone; the words are there for the grown-up.
  */
-import { h, sfx, settings, setSound, setVoiceOn } from '../../lib/core.js';
+import { h, sfx, settings, setSound, setVoiceOn, setMusicOn, homeLoop, stopHome, motif } from '../../lib/core.js';
 import { LEVELS, ACTIVITIES } from '../../content/registry.js';
 import { AGE_LEVELS } from '../../content/age-guide.js';
 import { BOOK } from '../../content/book.js';
@@ -55,6 +55,14 @@ export function renderHome(app) {
   );
   watchChapters(app, cleanups);
   cleanups.push(revealOnScroll(app));
+  // The soft home tune starts with her first tap (browsers keep pages silent until then).
+  const startTune = () => homeLoop();
+  startTune();
+  app.addEventListener('pointerdown', startTune);
+  cleanups.push(() => {
+    app.removeEventListener('pointerdown', startTune);
+    stopHome();
+  });
   return { destroy: () => cleanups.forEach((f) => f()) };
 }
 
@@ -68,6 +76,7 @@ function top() {
       'nav',
       { class: 'top-tools', 'aria-label': 'Settings for grown-ups' },
       toggle('Voice', () => settings.voice, setVoiceOn, 'tool', ['voice', 'voiceOff']),
+      toggle('Music', () => settings.music, setMusicOn, 'tool', ['music', 'musicOff']),
       toggle('Sound', () => settings.sound, setSound, 'tool', ['sound', 'soundOff']),
       h(
         'a',
@@ -137,7 +146,14 @@ function levelPicker() {
           {},
           h(
             'button',
-            { class: `level-btn lv${lv.n}`, type: 'button', onclick: () => scrollToLevel(lv) },
+            {
+              class: `level-btn lv${lv.n}`,
+              type: 'button',
+              onclick: () => {
+                motif(lv.n);
+                scrollToLevel(lv);
+              },
+            },
             stageGlyph(lv.n, 'level-glyph'),
             h('strong', {}, lv.name),
             h('span', {}, `${playedIn(lv.n)} of ${levelGames(lv.n).length} played`),
@@ -319,6 +335,11 @@ function footer() {
             'li',
             {},
             toggle('Sound', () => settings.sound, setSound, 'linkish'),
+          ),
+          h(
+            'li',
+            {},
+            toggle('Music', () => settings.music, setMusicOn, 'linkish'),
           ),
         ),
       ),

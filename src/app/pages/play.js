@@ -12,9 +12,11 @@ import { awardStars, savedRound, saveRound, clearRound } from '../progress.js';
 import { owl, toggle, roundDots } from '../ui.js';
 import { starRow, icon } from '../glyphs.js';
 import { gamePicture } from './home.js';
-import { loadVoicePack, voiceReady } from '../../lib/speech.js';
+import { loadVoicePack, voiceReady, fastTests } from '../../lib/speech.js';
+import { RHYMES, SONGS, MOVES } from '../../content/rhymes.js';
+import { songCard } from '../sing.js';
 
-const { h, say, sfx, confetti, settings, setVoiceOn, stopSpeaking } = core;
+const { h, say, sfx, confetti, settings, setVoiceOn, stopSpeaking, jingle, band } = core;
 
 const STARS_FOR_FINISHING = 3;
 
@@ -91,6 +93,14 @@ export function renderPlay(app, id) {
   let demoRunning = false;
   let generation = 0; // bumps on every (re)mount so a stale demo can't touch the new game
   let currentRound = 0;
+  let lastStage = 0; // round the progress dots last showed (a jingle plays when it moves on)
+  let rhyme = null; // { card, wrap } while the opening rhyme is on screen
+  let song = null; // the finish song's card while it plays
+  let bed = null; // the soft beat under a sung instruction
+  const endBed = (fade = 0.7) => {
+    bed?.stop(fade);
+    bed = null;
+  };
 
   watchBtn.addEventListener('click', async () => {
     if (!demoFn || demoRunning) return;
@@ -142,9 +152,55 @@ export function renderPlay(app, id) {
     if (mood) banner.classList.add(mood);
   }
 
+  function stopMusic() {
+    endBed(0.2);
+    if (rhyme) {
+      rhyme.card.stop();
+      rhyme.wrap.remove();
+      rhyme = null;
+    }
+    song?.stop();
+    song = null;
+  }
+
+  /** Rhyme time: chant the game's rhyme over its level's tune, then start round 1 (tap to start sooner). */
+  function startWithRhyme() {
+    const lines = RHYMES[id];
+    if (!lines || fastTests()) return mount(0);
+    loaders[id]().catch(() => {}); // fetch the game while the rhyme plays
+    const card = songCard({ lines, level: meta.level });
+    const go = h(
+      'button',
+      { class: 'pill primary go-play', type: 'button' },
+      icon('play', 30),
+      h('span', {}, 'Let’s play!'),
+    );
+    const wrap = h('div', { class: 'rhyme-wrap' }, card.el, go);
+    rhyme = { card, wrap };
+    stage.append(wrap);
+    bannerText.textContent = 'Rhyme time! Say it with me.';
+    const begin = () => {
+      if (rhyme?.card !== card) return;
+      stopMusic();
+      mount(0);
+    };
+    go.addEventListener('click', () => {
+      sfx('pop');
+      begin();
+    });
+    card.play().then((r) => {
+      if (r === 'done') {
+        go.classList.add('ready');
+        setTimeout(begin, 1200);
+      }
+    });
+  }
+
   /** (Re)start the game on round `startAt` (zero-based). */
   async function mount(startAt = 0) {
+    stopMusic();
     currentRound = startAt;
+    lastStage = startAt;
     generation += 1;
     demoRunning = false;
     watchBtn.disabled = false;
@@ -191,7 +247,22 @@ export function renderPlay(app, id) {
         setBanner(text);
         banner.classList.add('pulse');
         setTimeout(() => banner.classList.remove('pulse'), 600);
-        return say(text);
+        // Instructions are chanted over a soft beat in the level's style (with the music switched on).
+        if (!settings.music || !settings.voice || demoRunning || fastTests()) return say(text);
+        endBed(0.2);
+        const mine = band(meta.level, { lite: true });
+        bed = mine;
+        if (mine) {
+          mine.duck(true);
+          banner.style.setProperty('--beat', `${mine.beat}s`);
+          banner.classList.add('singing');
+        }
+        return say(text).finally(() => {
+          if (bed === mine) {
+            endBed();
+            banner.classList.remove('singing');
+          }
+        });
       },
       cheer(text = 'Well done!') {
         setBanner(text, 'good');
@@ -208,6 +279,8 @@ export function renderPlay(app, id) {
           currentRound = i;
           saveRound(id, i, n);
         }
+        if (i > lastStage && !demoRunning) jingle(meta.level); // ta-da: a round is done
+        lastStage = i;
         dots.replaceChildren(...roundDots(i, n));
       },
       setTalk,
@@ -239,6 +312,11 @@ export function renderPlay(app, id) {
   function celebrate() {
     sfx('win');
     confetti(document.body, 60);
+    // Song time: the level's finish song, with a move to do (clap, wiggle, jump, spin, dance)
+    const finale =
+      SONGS[meta.level] && !fastTests()
+        ? songCard({ lines: SONGS[meta.level], level: meta.level, title: 'Song time!', move: MOVES[meta.level] })
+        : null;
     const nextAct = ACTIVITIES[ACTIVITIES.indexOf(meta) + 1];
     const overlay = h(
       'div',
@@ -246,9 +324,10 @@ export function renderPlay(app, id) {
       h(
         'div',
         { class: 'card', role: 'dialog', 'aria-modal': 'true', 'aria-labelledby': 'done-h' },
-        owl(80),
+        finale ? null : owl(80),
         h('h2', { id: 'done-h' }, 'Hooray! You did it!'),
         h('div', { class: 'bigstars' }, starRow(STARS_FOR_FINISHING, STARS_FOR_FINISHING, 44)),
+        finale ? finale.el : null,
         nextAct
           ? h(
               'a',
@@ -284,7 +363,10 @@ export function renderPlay(app, id) {
     );
     app.append(overlay);
     overlay.querySelector('a, button')?.focus({ preventScroll: true });
-    say('Hooray! You did it!');
+    song = finale;
+    say('Hooray! You did it!').then(() => {
+      if (song === finale) finale?.play();
+    });
   }
 
   /** Welcome-back card: carry on from the saved round, or start again from round 1. */
@@ -334,9 +416,15 @@ export function renderPlay(app, id) {
     say(`Welcome back! Shall we carry on from round ${saved.r + 1}?`);
   }
 
+  loadVoicePack('songs');
   const saved = savedRound(id);
   if (saved) offerResume(saved);
-  else mount(0);
+  else startWithRhyme();
 
-  return { destroy: unmountGame };
+  return {
+    destroy() {
+      stopMusic();
+      unmountGame();
+    },
+  };
 }
