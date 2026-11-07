@@ -19,6 +19,7 @@ import { owl, toggle, bookCitation, revealOnScroll } from '../ui.js';
 import { stageGlyph, starRow, starIcon, icon } from '../glyphs.js';
 import { loadVoicePack } from '../../lib/speech.js';
 import { APP_VERSION } from '../version.js';
+import { isBlocked, firstOpen, askFor, openLockSettings } from '../lock.js';
 
 /** Pictures of each game's first round live in img/games/ (made by scripts/shots.mjs). */
 const IMG_BASE =
@@ -39,8 +40,9 @@ function scrollToLevel(lv) {
 
 export function renderHome(app) {
   app.className = 'page-home';
-  const next = ACTIVITIES.find((a) => !starsFor(a.id)) || null;
-  const inProgress = ACTIVITIES.find((a) => savedRound(a.id)) || null;
+  // locked games (grown-ups' PIN lock, src/app/lock.js) are never offered as the game to play next
+  const next = firstOpen(ACTIVITIES.filter((a) => !starsFor(a.id)));
+  const inProgress = firstOpen(ACTIVITIES.filter((a) => savedRound(a.id)));
   // Fetch the voice for the app and the game the child will most likely open next.
   loadVoicePack('app');
   if (inProgress) loadVoicePack(inProgress.id);
@@ -90,7 +92,7 @@ function top() {
 
 // ---------------------------------------------------------------- the big play card
 function playCard(next, inProgress) {
-  const pick = inProgress || next || ACTIVITIES[0];
+  const pick = inProgress || next || firstOpen(ACTIVITIES) || ACTIVITIES[0];
   const saved = inProgress ? savedRound(inProgress.id) : null;
   const lv = levelOf(pick);
   const verb = saved ? 'Carry on' : next ? 'Play' : 'Play again';
@@ -222,6 +224,7 @@ function chapters(next) {
 }
 
 function tile(a, next) {
+  if (isBlocked(a.id)) return lockedTile(a);
   const stars = starsFor(a.id);
   const saved = savedRound(a.id);
   const isNext = !!next && next.id === a.id && !saved;
@@ -244,6 +247,31 @@ function tile(a, next) {
     h('strong', { class: 'tile-title' }, a.title),
     h('span', { class: 'tile-status' }, status),
     h('span', { class: 'sub' }, a.blurb),
+  );
+}
+
+/** A game a grown-up has locked: padlock on the picture; tapping it asks for the PIN. */
+function lockedTile(a) {
+  return h(
+    'a',
+    {
+      class: 'tile locked',
+      href: `#/play/${a.id}`,
+      'aria-label': `${a.title}: locked by a grown-up`,
+      onclick: (e) => {
+        e.preventDefault();
+        sfx('tap');
+        askFor(a.id, () => (location.hash = `#/play/${a.id}`));
+      },
+    },
+    h(
+      'span',
+      { class: 'tile-pic' },
+      h('img', { class: 'thumb', src: gamePicture(a.id), alt: '', width: 480, height: 360, loading: 'lazy' }),
+      h('span', { class: 'padlock', 'aria-hidden': 'true' }, icon('lock', 40)),
+    ),
+    h('strong', { class: 'tile-title' }, a.title),
+    h('span', { class: 'tile-status lock-tag' }, icon('lock', 18), 'Locked'),
   );
 }
 
@@ -341,6 +369,7 @@ function footer() {
             {},
             toggle('Music', () => settings.music, setMusicOn, 'linkish'),
           ),
+          h('li', {}, h('button', { class: 'linkish', type: 'button', onclick: openLockSettings }, 'Lock games')),
         ),
       ),
       h(

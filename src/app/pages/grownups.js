@@ -8,6 +8,8 @@ import { bookCitation } from '../ui.js';
 import { gamePicture } from './home.js';
 import { APP_VERSION } from '../version.js';
 import { GISTS } from '../../content/gists.js';
+import { openLockSettings } from '../lock.js';
+import { icon } from '../glyphs.js';
 
 const HOW_TO = [
   'Sit beside her. Let her try before you explain.',
@@ -39,6 +41,18 @@ export function renderGrownups(app) {
         'Thirty short maths games from a real preschool maths circle, ',
         h('em', {}, 'Math from Three to Seven'),
         ' (Zvonkin). Five rounds each, read aloud.',
+      ),
+      h('h2', {}, 'Lock games'),
+      h(
+        'p',
+        { class: 'lock-intro' },
+        'Choose which games your child can open on this device. Locked games show a padlock and need your 4-digit PIN; “Play next” skips them. Nothing leaves this browser.',
+      ),
+      h(
+        'button',
+        { class: 'pill back lock-open', type: 'button', onclick: openLockSettings },
+        icon('lock', 24),
+        h('span', {}, 'Choose locked games'),
       ),
       h('h2', {}, 'How to play together'),
       h(

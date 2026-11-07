@@ -16,6 +16,7 @@ import { loadVoicePack, voiceReady, fastTests } from '../../lib/speech.js';
 import { RHYMES, SONGS, MOVES } from '../../content/rhymes.js';
 import { songCard } from '../sing.js';
 import { fitToStage } from '../../lib/fit.js';
+import { firstOpen } from '../lock.js';
 
 const { h, say, sfx, confetti, settings, setVoiceOn, stopSpeaking, jingle, band } = core;
 
@@ -323,7 +324,7 @@ export function renderPlay(app, id) {
       SONGS[meta.level] && !fastTests()
         ? songCard({ lines: SONGS[meta.level], level: meta.level, title: 'Song time!', move: MOVES[meta.level] })
         : null;
-    const nextAct = ACTIVITIES[ACTIVITIES.indexOf(meta) + 1];
+    const nextAct = firstOpen(ACTIVITIES.slice(ACTIVITIES.indexOf(meta) + 1)); // skips games a grown-up locked
     const overlay = h(
       'div',
       { class: 'overlay' },
